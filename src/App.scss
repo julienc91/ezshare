@@ -6,8 +6,10 @@ $grey: #f0f0f0;
 
 $header-height: 50px;
 $footer-height: 120px;
+$footer-margin: 80px;
+$border-height: 10px;
 
-$border: 10px solid $yellow;
+$border: $border-height solid $yellow;
 
 body {
   background-color: $white;
@@ -43,7 +45,7 @@ header {
 main {
   margin: 0 auto;
   max-width: 900px;
-  min-height: calc(100vh - #{$header-height} - #{$footer-height});
+  min-height: calc(100vh - #{$header-height + $footer-height + $footer-margin + 2 * $border-height});
 
   h1 {
     border-bottom: $border;
@@ -270,7 +272,7 @@ footer {
   flex-flow: column;
   height: $footer-height;
   justify-content: space-evenly;
-  margin: 80px auto 0;
+  margin: $footer-margin auto 0;
   width: 100%;
 
   i + a {
