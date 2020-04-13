@@ -70,7 +70,6 @@ export default class WebrtcClient extends React.Component {
     const { file, password } = this.props
 
     const url = new URL(`/download/${id}/`, document.baseURI).href
-    console.log(id, clientStatus)
     return (
       <>
         {id && (
