@@ -1,0 +1,279 @@
+$black: #111;
+$black-shadow: rgba(17, 17, 17, .5);
+$white: #fcfcfc;
+$yellow: #f0bc00;
+$grey: #f0f0f0;
+
+$header-height: 50px;
+$footer-height: 120px;
+
+$border: 10px solid $yellow;
+
+body {
+  background-color: $white;
+  color: $black;
+  font-family: Lato, sans-serif;
+  margin: 0 10px;
+  min-height: 100vh;
+  padding: 0;
+  text-align: center;
+}
+
+header {
+  align-items: center;
+  border-bottom: $border;
+  display: flex;
+  height: $header-height;
+  text-align: left;
+  width: 100%;
+
+  .logo {
+    align-items: center;
+    border: 0;
+    display: flex;
+    font-size: 20px;
+
+    i {
+      font-size: 30px;
+      margin-right: 20px;
+    }
+  }
+}
+
+main {
+  margin: 0 auto;
+  max-width: 900px;
+  min-height: calc(100vh - #{$header-height} - #{$footer-height});
+
+  h1 {
+    border-bottom: $border;
+    color: $black;
+    display: inline-flex;
+    margin: 50px auto;
+    text-transform: uppercase;
+  }
+
+}
+
+a,
+a:visited {
+  border-bottom: 2px solid $yellow;
+  color: $black;
+  outline: 0;
+  text-decoration: none;
+}
+
+hr {
+  border: 0;
+  border-bottom: $border;
+  margin-top: 50px;
+}
+
+.hidden {
+  visibility: hidden;
+}
+
+@keyframes rotating {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.loading-icon {
+  animation: rotating 2s linear infinite;
+}
+
+.progress {
+  border: 1px solid $black;
+  border-radius: 3px;
+  height: 20px;
+  min-width: 100px;
+  width: 100%;
+
+  .progress-inner {
+    background-color: $yellow;
+    height: calc(100% - 2px);
+    padding-top: 1px;
+  }
+
+  label {
+    color: $black;
+    display: block;
+    margin-top: -20px;
+  }
+}
+
+@mixin button($color, $background-color) {
+  background-color: $background-color;
+  border: 0;
+  border-radius: 5px;
+  color: $color;
+  cursor: pointer;
+  display: block;
+  font-weight: bold;
+  margin: 20px auto;
+  outline: 0;
+  padding: 10px 20px;
+  text-transform: uppercase;
+  transition: box-shadow .1s;
+
+  &:active {
+    box-shadow: 2px 2px 5px $black-shadow;
+  }
+}
+
+.steps {
+  align-items: center;
+  display: flex;
+  flex-flow: row wrap;
+  justify-content: space-between;
+  margin: auto;
+  padding: 0;
+
+  li {
+    align-items: center;
+    display: flex;
+    flex: 1 0 250px;
+    flex-flow: column;
+    list-style: none;
+    margin: 30px 15px;
+
+    i {
+      display: block;
+      font-size: 40px;
+    }
+
+    h3 {
+      font-weight: bold;
+    }
+
+    p {
+      max-width: 250px;
+    }
+  }
+}
+
+.dropzone {
+  align-items: center;
+  background-color: $grey;
+  border: 3px dashed $black;
+  border-radius: 10px;
+  cursor: pointer;
+  display: flex;
+  justify-content: center;
+  margin: 50px auto;
+  max-width: 800px;
+  min-height: 40vh;
+
+  button {
+    @include button($white, $black);
+  }
+}
+
+.uploaded-file {
+  align-items: center;
+  display: flex;
+  font-size: 30px;
+  justify-content: center;
+  margin: 50px auto;
+
+  .file-icon {
+    font-size: 40px;
+    margin-right: 20px;
+  }
+
+  .fa-trash {
+    cursor: pointer;
+    font-size: 20px;
+    margin-left: 20px;
+  }
+
+  span {
+    white-space: nowrap;
+
+    &.file-name,
+    &.file-extension {
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    &.file-size {
+      font-size: 20px;
+      margin-left: 10px;
+    }
+  }
+}
+
+.default-button {
+  @include button($black, $yellow);
+}
+
+.download-link {
+  pre {
+    background-color: $grey;
+    box-shadow: 2px 2px 5px $black-shadow;
+    display: inline-flex;
+    margin: auto;
+    padding: 15px;
+    text-align: center;
+
+    i {
+      margin-left: 20px;
+      width: 15px;
+
+      &.fa-copy {
+        cursor: pointer;
+      }
+    }
+  }
+}
+
+.save-link {
+  i + a {
+    margin-left: 10px;
+  }
+}
+
+.peer-list {
+  margin-top: 100px;
+
+  ul {
+    display: flex;
+    flex-flow: row wrap;
+    justify-content: center;
+    list-style: none;
+    padding: 0;
+  }
+
+  .peer {
+    margin: 25px;
+
+    .user-icon {
+      font-size: 50px;
+      margin-bottom: 25px;
+    }
+
+    button {
+      @include button($black, $yellow);
+      margin-top: 0;
+    }
+  }
+}
+
+footer {
+  border-top: $border;
+  display: flex;
+  flex-flow: column;
+  height: $footer-height;
+  justify-content: space-evenly;
+  margin: 80px auto 0;
+  width: 100%;
+
+  i + a {
+    margin-left: 10px;
+  }
+}

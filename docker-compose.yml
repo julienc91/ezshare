@@ -1,0 +1,13 @@
+version: '3'
+services:
+
+  frontend:
+    build: .
+    ports:
+    - "127.0.0.1:5000:5000"
+
+  webrtc:
+    build: .
+    command: ./node_modules/.bin/peerjs --port 5000
+    ports:
+    - "127.0.0.1:9000:5000"

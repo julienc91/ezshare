@@ -1,0 +1,15 @@
+export const CLIENT_STATUS_OPENING = 'opening'
+export const CLIENT_STATUS_OPEN = 'open'
+export const CLIENT_STATUS_CLOSE = 'close'
+export const CLIENT_STATUS_ERROR = 'error'
+
+export const CONN_STATUS_OPENING = 'opening'
+export const CONN_STATUS_OPEN = 'open'
+export const CONN_STATUS_CLOSE = 'close'
+export const CONN_STATUS_ERROR = 'error'
+
+export const PROCESS_STEP_CONNECTED = ''
+export const PROCESS_STEP_INIT = 'init'
+export const PROCESS_STEP_INFO = 'info'
+export const PROCESS_STEP_CHUNK = 'chunk'
+export const PROCESS_STEP_COMPLETE = 'complete'
