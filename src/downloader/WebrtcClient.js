@@ -1,5 +1,7 @@
 import React from 'react'
 import Peer from 'peerjs'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { faSpinnerThird, faSave } from '@fortawesome/pro-solid-svg-icons'
 import * as constants from '../constants'
 import { formatSize, getFileIcon, splitFileExtension } from '../utils'
 
@@ -110,7 +112,7 @@ export default class WebrtcClient extends React.Component {
       <section>
         <h1>Waiting for connection</h1>
         <div>
-          <i className='loading-icon fas fa-spinner-third' />
+          <FontAwesomeIcon className='loading-icon' icon={faSpinnerThird} />
         </div>
         <div>
           <p>We're waiting for the uploader to establish the connection.</p>
@@ -127,7 +129,7 @@ export default class WebrtcClient extends React.Component {
         <section>
           <h1>Connected</h1>
           <div>
-            <i className='loading-icon fas fa-spinner-third' />
+            <FontAwesomeIcon className='loading-icon' icon={faSpinnerThird} />
           </div>
           <div>
             <p>The connection was established.</p>
@@ -159,7 +161,7 @@ export default class WebrtcClient extends React.Component {
         </h1>
         <div>
           <div className='uploaded-file'>
-            <i className={fileIcon + ' file-icon'} />
+            <FontAwesomeIcon className='file-icon' icon={fileIcon} />
             <span className='file-name'>{filename}</span>
             <span className='file-extension'>{extension}</span>
             <span className='file-size'>{formatSize(fileInfo.size)}</span>
@@ -179,7 +181,7 @@ export default class WebrtcClient extends React.Component {
             <div>
               <p>Click the link below to save the file on your computer.</p>
               <div className='save-link'>
-                <i className='fas fa-save' />
+                <FontAwesomeIcon icon={faSave} />
                 <a href={url} target='_blank' rel='noopener noreferrer' download={fileInfo.name} ref={this.link}>
                   {fileInfo.name}
                 </a>

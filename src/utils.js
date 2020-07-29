@@ -1,3 +1,5 @@
+import { faFile, faFileAlt, faFileArchive, faFileCode, faFileImage, faFileMusic, faFilePdf, faFileVideo } from '@fortawesome/pro-regular-svg-icons'
+
 export const formatSize = (size) => {
   let unit
   if (size < 1024) {
@@ -19,25 +21,25 @@ export const getFileIcon = (mime) => {
   let icon
   mime = mime || ''
   if (mime.startsWith('audio')) {
-    icon = 'far fa-file-music'
+    icon = faFileMusic
   } else if (mime.startsWith('image')) {
-    icon = 'far fa-file-image'
+    icon = faFileImage
   } else if (mime.startsWith('video')) {
-    icon = 'far fa-file-video'
+    icon = faFileVideo
   } else {
     switch (mime) {
       case 'text/markdown':
       case 'text/plain':
-        icon = 'far fa-file-alt'
+        icon = faFileAlt
         break
       case 'application/x-rar-compressed':
       case 'application/x-tar':
       case 'application/zip':
       case 'application/7z':
-        icon = 'far fa-file-archive'
+        icon = faFileArchive
         break
       case 'application/pdf':
-        icon = 'far fa-file-pdf'
+        icon = faFilePdf
         break
       case 'text/css':
       case 'text/html':
@@ -49,10 +51,10 @@ export const getFileIcon = (mime) => {
       case 'application/xml':
       case 'text/x-python':
       case 'text/x-shellscript':
-        icon = 'far fa-file-code'
+        icon = faFileCode
         break
       default:
-        icon = 'far fa-file'
+        icon = faFile
         break
     }
   }

@@ -35,7 +35,7 @@ header {
     display: flex;
     font-size: 20px;
 
-    i {
+    svg {
       font-size: 30px;
       margin-right: 20px;
     }
@@ -144,7 +144,7 @@ hr {
     list-style: none;
     margin: 30px 15px;
 
-    i {
+    svg {
       display: block;
       font-size: 40px;
     }
@@ -223,9 +223,9 @@ hr {
     padding: 15px;
     text-align: center;
 
-    i {
+    svg {
+      font-size: 1rem;
       margin-left: 20px;
-      width: 15px;
 
       &.fa-copy {
         cursor: pointer;
@@ -235,7 +235,7 @@ hr {
 }
 
 .save-link {
-  i + a {
+  svg + a {
     margin-left: 10px;
   }
 }
@@ -275,7 +275,7 @@ footer {
   margin: $footer-margin auto 0;
   width: 100%;
 
-  i + a {
+  svg + a {
     margin-left: 10px;
   }
 }

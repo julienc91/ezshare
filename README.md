@@ -10,6 +10,10 @@ Demo on: https://ezshare.julienc.io/
 
 ## Quick Start
 
+You will need a Font Awesome Pro license to start directly. If you have one, set your authorization
+token in the `.env` file. If you don't, simply replace usage of pro icons by free alternatives
+before continuing.
+
 ### With Docker
 
 Using Docker:

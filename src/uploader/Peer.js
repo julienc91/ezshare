@@ -1,5 +1,7 @@
 import React from 'react'
 import PropTypes from 'prop-types'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { faSpinnerThird, faUser, faUserCheck, faUserSlash } from '@fortawesome/pro-solid-svg-icons'
 import * as constants from '../constants'
 
 const CHUNK_SIZE = 1024 * 1024
@@ -110,11 +112,11 @@ export default class Peer extends React.Component {
   render () {
     const { start, status, step, chunkNumber } = this.state
 
-    let iconClass = 'user-icon fas fa-user'
+    let icon = faUser
     if (step === constants.PROCESS_STEP_COMPLETE) {
-      iconClass = 'user-icon fas fa-user-check'
+      icon = faUserCheck
     } else if (status === constants.CONN_STATUS_CLOSE || status === constants.CONN_STATUS_ERROR) {
-      iconClass = 'user-icon fas fa-user-slash'
+      icon = faUserSlash
     }
 
     let progress = 100 * chunkNumber / this.totalChunks
@@ -124,14 +126,14 @@ export default class Peer extends React.Component {
 
     return (
       <div className='peer'>
-        <i className={iconClass} />
+        <FontAwesomeIcon className='user-icon' icon={icon} />
         {status === constants.CONN_STATUS_OPEN && !start && (
           <button onClick={this.handleStart}>Start</button>
         )}
         {status === constants.CONN_STATUS_OPEN && start && chunkNumber <= 0 && (
           <div>
             <div>Waiting for peer</div>
-            <i className='loading-icon fas fa-spinner-third' />
+            <FontAwesomeIcon className='loading-icon' icon={faSpinnerThird} />
           </div>
         )}
         {start && chunkNumber > 0 && (

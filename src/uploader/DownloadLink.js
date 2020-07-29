@@ -1,4 +1,6 @@
 import React from 'react'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { faCheck, faCopy } from '@fortawesome/pro-regular-svg-icons'
 
 class DownloadLink extends React.Component {
   constructor (props) {
@@ -29,7 +31,9 @@ class DownloadLink extends React.Component {
         <p>This link will be valid as long as your tab is open.</p>
         <pre>
           <a href={url} target='_blank' rel='noopener noreferrer'>{id}</a>
-          <i className={copied ? 'far fa-check' : 'far fa-copy'} onClick={copied ? undefined : this.handleCopy} />
+          {copied
+            ? <FontAwesomeIcon icon={faCheck} />
+            : <FontAwesomeIcon icon={faCopy} onClick={this.handleCopy} />}
         </pre>
       </section>
     )

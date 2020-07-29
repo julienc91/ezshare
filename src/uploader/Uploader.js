@@ -1,4 +1,6 @@
 import React from 'react'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { faBolt, faCodeBranch, faGlobe, faLock, faMask, faTrash } from '@fortawesome/pro-solid-svg-icons'
 import FileUploader from './FileUploader'
 import WebrtcClient from './WebrtcClient'
 import { formatSize, getFileIcon, splitFileExtension } from '../utils'
@@ -41,11 +43,11 @@ class Uploader extends React.Component {
           {file && (
             <div>
               <div className='uploaded-file'>
-                <i className={fileIcon + ' file-icon'} />
+                <FontAwesomeIcon className='file-icon' icon={fileIcon} />
                 <span className='file-name'>{filename}</span>
                 <span className='file-extension'>{extension}</span>
                 <span className='file-size'>{formatSize(file.size)}</span>
-                <i className={'fas fa-trash' + (start ? ' hidden' : '')} onClick={this.handleReset} />
+                <FontAwesomeIcon className={start ? 'hidden': ''} icon={faTrash} onClick={this.handleReset} />
               </div>
               <div>
                 {!start && <button className='default-button' onClick={this.handleStartWebrtcClient}>Start sharing</button>}
@@ -69,27 +71,27 @@ const KeyPoints = () => (
     <h1>Our vision</h1>
     <ul className='steps'>
       <li>
-        <i className='fas fa-lock' />
+        <FontAwesomeIcon icon={faLock} />
         <h3>Encryption</h3>
         <p>End-to-end encryption between you and your peers</p>
       </li>
       <li>
-        <i className='fas fa-mask' />
+        <FontAwesomeIcon icon={faMask} />
         <h3>Privacy</h3>
         <p>No tracking, no middle-man. Your data is yours and yours only</p>
       </li>
       <li>
-        <i className='fas fa-bolt' />
+        <FontAwesomeIcon icon={faBolt} />
         <h3>Speed</h3>
         <p>No speed limit other than the one of your own connection</p>
       </li>
       <li>
-        <i className='fas fa-globe' />
+        <FontAwesomeIcon icon={faGlobe} />
         <h3>Free</h3>
         <p>No restriction whatsoever, and totally free</p>
       </li>
       <li>
-        <i className='fas fa-code-branch' />
+        <FontAwesomeIcon icon={faCodeBranch} />
         <h3>Open Source</h3>
         <p>Contributions are welcome to help us grow and improve our service</p>
       </li>

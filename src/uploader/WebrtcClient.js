@@ -1,5 +1,7 @@
 import React from 'react'
 import Peer from 'peerjs'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { faExclamationCircle, faSpinnerThird } from '@fortawesome/pro-solid-svg-icons'
 import DownloadLink from './DownloadLink'
 import PeerList from './PeerList'
 import * as constants from '../constants'
@@ -80,13 +82,13 @@ export default class WebrtcClient extends React.Component {
         )}
         {!id && clientStatus === constants.CLIENT_STATUS_OPENING && (
           <>
-            <div><i className='loading-icon fas fa-spinner-third' /></div>
+            <div><FontAwesomeIcon icon={faSpinnerThird} /></div>
             <div>Waiting to establish a connection with the server</div>
           </>
         )}
         {!id && clientStatus !== constants.CLIENT_STATUS_OPENING && (
           <>
-            <div><i className='fas fa-exclamation-circle' /></div>
+            <div><FontAwesomeIcon icon={faExclamationCircle} /></div>
             <div>Could not establish a connection to the server.</div>
             <div><button className='default-button' onClick={this.handleRefresh}>Try again</button></div>
           </>
