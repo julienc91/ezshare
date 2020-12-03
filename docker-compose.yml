@@ -4,16 +4,12 @@ services:
   webapp:
     build:
       context: .
-      args:
-        - FONTAWESOME_AUTH_TOKEN=${FONTAWESOME_AUTH_TOKEN}
     ports:
       - "127.0.0.1:5000:5000"
 
   peerjs:
     build:
       context: .
-      args:
-        - FONTAWESOME_AUTH_TOKEN=${FONTAWESOME_AUTH_TOKEN}
-    command: ./node_modules/.bin/peerjs --port 5000
+    command: ./node_modules/.bin/peerjs --port 9000
     ports:
-      - "127.0.0.1:9000:5000"
+      - "127.0.0.1:9000:9000"

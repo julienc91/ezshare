@@ -1,4 +1,4 @@
-import { faFile, faFileAlt, faFileArchive, faFileCode, faFileImage, faFileMusic, faFilePdf, faFileVideo } from '@fortawesome/pro-regular-svg-icons'
+import { faFile, faFileAlt, faFileArchive, faFileAudio, faFileCode, faFileImage, faFilePdf, faFileVideo } from '@fortawesome/free-regular-svg-icons'
 
 export const formatSize = (size) => {
   let unit
@@ -21,7 +21,7 @@ export const getFileIcon = (mime) => {
   let icon
   mime = mime || ''
   if (mime.startsWith('audio')) {
-    icon = faFileMusic
+    icon = faFileAudio
   } else if (mime.startsWith('image')) {
     icon = faFileImage
   } else if (mime.startsWith('video')) {

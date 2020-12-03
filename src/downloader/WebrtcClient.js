@@ -1,7 +1,7 @@
 import React from 'react'
 import Peer from 'peerjs'
+import { faSpinner, faSave } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faSpinnerThird, faSave } from '@fortawesome/pro-solid-svg-icons'
 import * as constants from '../constants'
 import { formatSize, getFileIcon, splitFileExtension } from '../utils'
 
@@ -112,7 +112,7 @@ export default class WebrtcClient extends React.Component {
       <section>
         <h1>Waiting for connection</h1>
         <div>
-          <FontAwesomeIcon className='loading-icon' icon={faSpinnerThird} />
+          <FontAwesomeIcon className='loading-icon' icon={faSpinner} />
         </div>
         <div>
           <p>We're waiting for the uploader to establish the connection.</p>
@@ -129,7 +129,7 @@ export default class WebrtcClient extends React.Component {
         <section>
           <h1>Connected</h1>
           <div>
-            <FontAwesomeIcon className='loading-icon' icon={faSpinnerThird} />
+            <FontAwesomeIcon className='loading-icon' icon={faSpinner} />
           </div>
           <div>
             <p>The connection was established.</p>

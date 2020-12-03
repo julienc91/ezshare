@@ -1,7 +1,7 @@
 import React from 'react'
 import PropTypes from 'prop-types'
+import { faSpinner, faUser, faUserCheck, faUserSlash } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faSpinnerThird, faUser, faUserCheck, faUserSlash } from '@fortawesome/pro-solid-svg-icons'
 import * as constants from '../constants'
 
 const CHUNK_SIZE = 1024 * 1024
@@ -133,7 +133,7 @@ export default class Peer extends React.Component {
         {status === constants.CONN_STATUS_OPEN && start && chunkNumber <= 0 && (
           <div>
             <div>Waiting for peer</div>
-            <FontAwesomeIcon className='loading-icon' icon={faSpinnerThird} />
+            <FontAwesomeIcon className='loading-icon' icon={faSpinner} />
           </div>
         )}
         {start && chunkNumber > 0 && (

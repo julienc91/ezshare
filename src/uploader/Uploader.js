@@ -1,6 +1,6 @@
 import React from 'react'
+import { faBolt, faCodeBranch, faGlobe, faLock, faMask, faTrash } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faBolt, faCodeBranch, faGlobe, faLock, faMask, faTrash } from '@fortawesome/pro-solid-svg-icons'
 import FileUploader from './FileUploader'
 import WebrtcClient from './WebrtcClient'
 import { formatSize, getFileIcon, splitFileExtension } from '../utils'

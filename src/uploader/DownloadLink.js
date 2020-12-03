@@ -1,6 +1,7 @@
 import React from 'react'
+import { faCopy } from '@fortawesome/free-regular-svg-icons'
+import { faCheck } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faCheck, faCopy } from '@fortawesome/pro-regular-svg-icons'
 
 class DownloadLink extends React.Component {
   constructor (props) {
