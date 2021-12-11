@@ -1,5 +1,5 @@
 import React from 'react'
-import { BrowserRouter as Router, Route, Switch } from 'react-router-dom'
+import { BrowserRouter as Router, Route, Routes } from 'react-router-dom'
 import Downloader from './downloader'
 import Uploader from './uploader'
 import './App.scss'
@@ -10,10 +10,10 @@ const App = () => (
   <Router>
     <Header />
     <main>
-      <Switch>
-        <Route exact path='/' component={Uploader} />
-        <Route path='/download/:id/' component={Downloader} />
-      </Switch>
+      <Routes>
+        <Route path="/" element={<Uploader />} />
+        <Route path="/download/:id/" element={<Downloader />} />
+      </Routes>
     </main>
     <Footer />
   </Router>

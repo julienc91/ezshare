@@ -1,13 +1,12 @@
 import React from 'react'
+import { useParams } from 'react-router-dom'
 import WebrtcClient from './WebrtcClient'
 
-class Downloader extends React.Component {
-  render () {
-    const { id } = this.props.match.params
-    return (
-      <WebrtcClient id={id} />
-    )
-  }
+const Downloader = () => {
+  const { id } = useParams()
+  return (
+    <WebrtcClient id={id} />
+  )
 }
 
 export default Downloader
