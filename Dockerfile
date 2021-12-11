@@ -1,12 +1,11 @@
-FROM node:15
+FROM node:16
 
 WORKDIR /opt/ezshare/
 COPY package.json .
-RUN npm install \
-    && npm install -g serve
+RUN yarn
 COPY . .
-RUN npm run build
+RUN yarn build
 
-EXPOSE 5000
+EXPOSE 3000
 
-CMD ["serve", "-s", "build/"]
+CMD ["./node_modules/.bin/serve", "-s", "build/"]

@@ -18,7 +18,7 @@ Using Docker:
 $ docker-compose up -d --build
 ```
 
-This will start two services, the web application on port 5000, and the PeerJS server on port 9000.
+This will start two services, the web application on port 3000, and the PeerJS server on port 9000.
 
 
 ### Without Docker
@@ -26,26 +26,25 @@ This will start two services, the web application on port 5000, and the PeerJS s
 Install dependencies:
 
 ```
-$ npm install
-$ npm install -g serve
+$ yarn
 ```
 
 Create a production build:
 
 ```
-$ npm run build
+$ yarn build
 ```
 
-Start the web application on port 5000:
+Start the web application on port 3000:
 
 ```
-$ serve -s build/
+$ ./node_modules/.bin/serve -s build/
 ```
 
 Start the PeerJS server on port 9000:
 
 ```
-./node_modules/.bin/peerjs --port 9000
+$ ./node_modules/.bin/peerjs --port 9000
 ```
 
 ## SSL Configuration
