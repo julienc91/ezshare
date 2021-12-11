@@ -8,4 +8,4 @@ RUN yarn build
 
 EXPOSE 3000
 
-CMD ["./node_modules/.bin/serve", "-s", "build/"]
+CMD ["yarn", "serve", "-s", "build/"]

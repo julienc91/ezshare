@@ -6,7 +6,7 @@ import './App.scss'
 import Footer from './Footer'
 import Header from './Header'
 
-const App = () => (
+const App: React.FC = () => (
   <Router>
     <Header />
     <main>

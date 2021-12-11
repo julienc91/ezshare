@@ -1,5 +1,5 @@
 $black: #111;
-$black-shadow: rgba(17, 17, 17, .5);
+$black-shadow: rgba(17, 17, 17, 0.5);
 $white: #fcfcfc;
 $yellow: #f0bc00;
 $grey: #f0f0f0;
@@ -45,7 +45,10 @@ header {
 main {
   margin: 0 auto;
   max-width: 900px;
-  min-height: calc(100vh - #{$header-height + $footer-height + $footer-margin + 2 * $border-height});
+  min-height: calc(
+    100vh - #{$header-height + $footer-height + $footer-margin + 2 *
+      $border-height}
+  );
 
   h1 {
     border-bottom: $border;
@@ -54,7 +57,6 @@ main {
     margin: 50px auto;
     text-transform: uppercase;
   }
-
 }
 
 a,
@@ -121,7 +123,7 @@ hr {
   outline: 0;
   padding: 10px 20px;
   text-transform: uppercase;
-  transition: box-shadow .1s;
+  transition: box-shadow 0.1s;
 
   &:active {
     box-shadow: 2px 2px 5px $black-shadow;

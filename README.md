@@ -20,7 +20,6 @@ $ docker-compose up -d --build
 
 This will start two services, the web application on port 3000, and the PeerJS server on port 9000.
 
-
 ### Without Docker
 
 Install dependencies:
@@ -38,13 +37,13 @@ $ yarn build
 Start the web application on port 3000:
 
 ```
-$ ./node_modules/.bin/serve -s build/
+$ yarn serve -s build/
 ```
 
 Start the PeerJS server on port 9000:
 
 ```
-$ ./node_modules/.bin/peerjs --port 9000
+$ yarn peerjs --port 9000
 ```
 
 ## SSL Configuration
@@ -55,7 +54,7 @@ For the PeerJS server though, I would suggest modifyng the docker-compose.yml fi
 ```
 peerjs:
     ...
-    command: ./node_modules/.bin/peerjs --port 5000 --sslkey /path/to/privkey.pem --sslcert /path/to/fullchain.pem
+    command: yarn peerjs --port 5000 --sslkey /path/to/privkey.pem --sslcert /path/to/fullchain.pem
 ```
 
 An additional volume may be added to make the cert files available on the container. For example with Let's Encrypt:

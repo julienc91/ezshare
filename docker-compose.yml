@@ -1,15 +1,14 @@
 version: '3'
 services:
-
   webapp:
     build:
       context: .
     ports:
-      - "127.0.0.1:3000:3000"
+      - '127.0.0.1:3000:3000'
 
   peerjs:
     build:
       context: .
-    command: ./node_modules/.bin/peerjs --port 9000
+    command: yarn peerjs --port 9000
     ports:
-      - "127.0.0.1:9000:9000"
+      - '127.0.0.1:9000:9000'

@@ -3,9 +3,9 @@ import { Link } from 'react-router-dom'
 import { faShareAlt } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 
-const Header = () => (
+const Header: React.FC = () => (
   <header>
-    <Link to='/' className='logo'>
+    <Link to="/" className="logo">
       <FontAwesomeIcon icon={faShareAlt} />
       <h1>ezshare</h1>
     </Link>

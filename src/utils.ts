@@ -1,6 +1,17 @@
-import { faFile, faFileAlt, faFileArchive, faFileAudio, faFileCode, faFileImage, faFilePdf, faFileVideo } from '@fortawesome/free-regular-svg-icons'
+import React from 'react'
+import { IconDefinition } from '@fortawesome/free-brands-svg-icons'
+import {
+  faFile,
+  faFileAlt,
+  faFileArchive,
+  faFileAudio,
+  faFileCode,
+  faFileImage,
+  faFilePdf,
+  faFileVideo,
+} from '@fortawesome/free-regular-svg-icons'
 
-export const formatSize = (size) => {
+export const formatSize = (size: number): string => {
   let unit
   if (size < 1024) {
     unit = 'B'
@@ -9,15 +20,15 @@ export const formatSize = (size) => {
     size = Math.round(size / 1024)
   } else if (size < 1024 ** 3) {
     unit = 'MB'
-    size = Math.round(size / (1024 ** 2))
+    size = Math.round(size / 1024 ** 2)
   } else {
     unit = 'GB'
-    size = Math.round(size / (1024 ** 3))
+    size = Math.round(size / 1024 ** 3)
   }
   return `${size}${unit}`
 }
 
-export const getFileIcon = (mime) => {
+export const getFileIcon = (mime: string): IconDefinition => {
   let icon
   mime = mime || ''
   if (mime.startsWith('audio')) {
@@ -61,12 +72,22 @@ export const getFileIcon = (mime) => {
   return icon
 }
 
-export const splitFileExtension = filename => {
+export const splitFileExtension = (filename: string): [string, string] => {
   filename = filename || ''
   let extension = ''
   if (filename.includes('.')) {
-    extension = (/(?:\.([^.]+))?$/).exec(filename)[0] || ''
-    filename = filename.slice(0, -(extension.length))
+    extension = /(?:\.([^.]+))?$/.exec(filename)?.[0] || ''
+    filename = filename.slice(0, -extension.length)
   }
   return [filename, extension]
+}
+
+export const syncStateWithRef = <T>(
+  setState: React.Dispatch<React.SetStateAction<T>>,
+  ref: React.MutableRefObject<T>
+) => {
+  return (value: T) => {
+    setState(value)
+    ref.current = value
+  }
 }
