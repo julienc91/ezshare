@@ -62,10 +62,8 @@ const WebrtcClient: React.FC<{ id: string }> = ({ id }) => {
   }, [setStep])
 
   const handleReceiveData = (data: Message) => {
-    console.log('DATA RECEIVED', data, stepRef.current)
     if (data.type === STEPS.PROCESS_STEP_INIT) {
       setStep(STEPS.PROCESS_STEP_INIT)
-      console.log('Sending init-ack', connRef.current)
       connRef.current?.send({ type: `${STEPS.PROCESS_STEP_INIT}-ack` })
     } else if (data.type === STEPS.PROCESS_STEP_INFO) {
       setStep(STEPS.PROCESS_STEP_INFO)
