@@ -41,7 +41,8 @@ const Peer: React.FC<{
     peer.on('error', () => {
       setStatus(CONN_STATUSES.CONN_STATUS_ERROR)
     })
-    peer.on('data', (message: MessageEvent) => {
+    peer.on('data', (data: unknown) => {
+      const message = data as MessageEvent
       const chunkNumber = chunkNumberRef.current
       const step = stepRef.current
 

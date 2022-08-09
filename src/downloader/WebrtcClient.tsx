@@ -61,20 +61,21 @@ const WebrtcClient: React.FC<{ id: string }> = ({ id }) => {
     connRef.current?.send({ type: `${STEPS.PROCESS_STEP_INFO}-ack` })
   }, [setStep])
 
-  const handleReceiveData = (data: Message) => {
-    if (data.type === STEPS.PROCESS_STEP_INIT) {
+  const handleReceiveData = (data: unknown) => {
+    const message = data as Message
+    if (message.type === STEPS.PROCESS_STEP_INIT) {
       setStep(STEPS.PROCESS_STEP_INIT)
       connRef.current?.send({ type: `${STEPS.PROCESS_STEP_INIT}-ack` })
-    } else if (data.type === STEPS.PROCESS_STEP_INFO) {
+    } else if (message.type === STEPS.PROCESS_STEP_INFO) {
       setStep(STEPS.PROCESS_STEP_INFO)
       setFileInfo({
-        size: data.filesize,
-        name: data.filename,
-        type: data.filetype,
-        chunks: data.chunks,
+        size: message.filesize,
+        name: message.filename,
+        type: message.filetype,
+        chunks: message.chunks,
       })
-    } else if (data.type === STEPS.PROCESS_STEP_CHUNK) {
-      const chunk = data.chunk
+    } else if (message.type === STEPS.PROCESS_STEP_CHUNK) {
+      const chunk = message.chunk
       setChunks([...chunksRef.current, new Blob([chunk])])
       setDownloadedSize(downloadedSizeRef.current + chunk.byteLength)
       connRef.current?.send({ type: 'chunk-ack' })
