@@ -46,16 +46,16 @@ const Peer: React.FC<{
       const chunkNumber = chunkNumberRef.current
       const step = stepRef.current
 
-      const sendChunk = () => {
+      const sendChunk = (n: number) => {
         // step 3: send chunk
         const chunk = file.slice(
-          CHUNK_SIZE * chunkNumber,
-          CHUNK_SIZE * (chunkNumber + 1)
+          CHUNK_SIZE * n,
+          Math.min(CHUNK_SIZE * (n + 1), file.size)
         )
         peer.send({
           type: STEPS.PROCESS_STEP_CHUNK,
           chunk,
-          chunkNumber,
+          chunkNumber: n,
         })
       }
 
@@ -77,7 +77,7 @@ const Peer: React.FC<{
         case `${STEPS.PROCESS_STEP_INFO}-ack`:
           if (step === STEPS.PROCESS_STEP_INFO) {
             setStep(STEPS.PROCESS_STEP_CHUNK)
-            sendChunk()
+            sendChunk(0)
           }
           break
 
@@ -88,7 +88,7 @@ const Peer: React.FC<{
             if (newChunkNumber >= totalChunks) {
               setStep(STEPS.PROCESS_STEP_COMPLETE)
             } else {
-              sendChunk()
+              sendChunk(newChunkNumber)
             }
           }
           break
