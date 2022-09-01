@@ -2,7 +2,7 @@ import React, { useCallback, useState } from 'react'
 import { faCopy } from '@fortawesome/free-regular-svg-icons'
 import { faCheck } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { QRCodeCanvas } from 'qrcode.react';
+import { QRCodeCanvas } from 'qrcode.react'
 
 const DownloadLink: React.FC<{ id: string; url: string }> = ({ id, url }) => {
   const [copied, setCopied] = useState(false)
@@ -29,7 +29,7 @@ const DownloadLink: React.FC<{ id: string; url: string }> = ({ id, url }) => {
         )}
       </pre>
       <p>
-      <QRCodeCanvas size={190} value={url} />
+        <QRCodeCanvas size={190} value={url} />
       </p>
     </section>
   )
