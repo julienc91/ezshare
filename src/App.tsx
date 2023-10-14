@@ -2,7 +2,6 @@ import React from 'react'
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom'
 import Downloader from './downloader'
 import Uploader from './uploader'
-import './App.scss'
 import Footer from './Footer'
 import Header from './Header'
 
@@ -18,5 +17,4 @@ const App: React.FC = () => (
     <Footer />
   </Router>
 )
-
 export default App
