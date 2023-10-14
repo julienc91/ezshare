@@ -48,14 +48,15 @@ const Peer: React.FC<{
 
       const sendChunk = (n: number) => {
         // step 3: send chunk
-        const chunk = file.slice(
+        file.slice(
           CHUNK_SIZE * n,
           Math.min(CHUNK_SIZE * (n + 1), file.size)
-        )
-        peer.send({
-          type: STEPS.PROCESS_STEP_CHUNK,
-          chunk,
-          chunkNumber: n,
+        ).arrayBuffer().then((chunk) => {
+          peer.send({
+            type: STEPS.PROCESS_STEP_CHUNK,
+            chunk,
+            chunkNumber: n,
+          })
         })
       }
 
