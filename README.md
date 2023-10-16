@@ -37,7 +37,7 @@ $ yarn build
 Start the web application on port 3000:
 
 ```
-$ yarn serve -s build/
+$ yarn serve -s dist/
 ```
 
 Start the PeerJS server on port 9000:
