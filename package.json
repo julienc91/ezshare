@@ -17,6 +17,9 @@
     "react-router-dom": "^6.1.0",
     "serve": "^14.0.1"
   },
+  "resolutions": {
+    "serve/**/path-to-regexp": "^3.3.0"
+  },
   "devDependencies": {
     "@types/node": "^20.8.6",
     "@types/react": "^18.0.7",
