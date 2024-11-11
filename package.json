@@ -18,7 +18,7 @@
     "serve": "^14.0.1"
   },
   "resolutions": {
-    "serve/**/path-to-regexp": "^3.3.0"
+    "serve/**/path-to-regexp": "^8.0.0"
   },
   "devDependencies": {
     "@types/node": "^20.8.6",
