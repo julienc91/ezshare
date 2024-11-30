@@ -108,3 +108,7 @@ build/
 .sass-cache
 src/App.css
 src/App.css.map
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
