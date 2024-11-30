@@ -25,7 +25,9 @@ const DownloadLink: React.FC<{ id: string; url: string }> = ({ id, url }) => {
         {copied ? (
           <FontAwesomeIcon icon={faCheck} />
         ) : (
-          <FontAwesomeIcon icon={faCopy} onClick={handleCopy} />
+            <button className="icon-only" onClick={handleCopy}>
+                <FontAwesomeIcon icon={faCopy} />
+            </button>
         )}
       </pre>
       <p>

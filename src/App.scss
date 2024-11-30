@@ -191,7 +191,6 @@ hr {
   }
 
   .fa-trash {
-    cursor: pointer;
     font-size: 20px;
     margin-left: 20px;
   }
@@ -214,6 +213,14 @@ hr {
 
 .default-button {
   @include button($black, $yellow);
+}
+
+.icon-only {
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  margin: 0;
+  padding: 0;
 }
 
 .download-link {

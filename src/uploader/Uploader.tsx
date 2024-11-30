@@ -41,11 +41,9 @@ const Uploader: React.FC = () => {
               <span className="file-name">{filename}</span>
               <span className="file-extension">{extension}</span>
               <span className="file-size">{formatSize(file.size)}</span>
-              <FontAwesomeIcon
-                className={start ? 'hidden' : ''}
-                icon={faTrash}
-                onClick={handleReset}
-              />
+              <button className={"icon-only" + (start ? ' hidden': '')} title="Remove file"  onClick={handleReset}>
+                <FontAwesomeIcon icon={faTrash} />
+              </button>
             </div>
             <div>
               {!start && (
