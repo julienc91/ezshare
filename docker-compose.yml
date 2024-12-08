@@ -5,11 +5,3 @@ services:
     ports:
       - '127.0.0.1:3000:3000'
     restart: always
-
-  peerjs:
-    image: ghcr.io/julienc91/ezshare:latest
-    pull_policy: always
-    command: yarn peerjs --port 9000
-    ports:
-      - '127.0.0.1:9000:9000'
-    restart: always
