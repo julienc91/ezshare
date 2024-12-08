@@ -19,3 +19,5 @@ export enum STEPS {
   PROCESS_STEP_CHUNK = 'chunk',
   PROCESS_STEP_COMPLETE = 'complete',
 }
+
+export const trysteroConfig = { appId: 'ezshare' }

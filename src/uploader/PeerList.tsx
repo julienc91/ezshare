@@ -1,12 +1,9 @@
-import React from 'react'
-import Peer from './Peer'
-import { DataConnection } from 'peerjs'
+import React, { useContext } from 'react'
+import PeerItem from './Peer'
+import { UploaderContext } from './context.ts'
 
-const PeerList: React.FC<{
-  file: File
-  password?: string
-  peers: DataConnection[]
-}> = ({ file, password, peers }) => {
+const PeerList: React.FC = () => {
+  const { peers } = useContext(UploaderContext)
   if (!peers.length) {
     return (
       <section className="peer-list">
@@ -21,8 +18,8 @@ const PeerList: React.FC<{
       <ul>
         {peers.map((peer) => {
           return (
-            <li key={peer.peer}>
-              <Peer file={file} password={password} peer={peer} />
+            <li key={peer.peerId}>
+              <PeerItem peer={peer} />
             </li>
           )
         })}
