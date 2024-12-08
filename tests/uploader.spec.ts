@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test'
-import { APP_URL, startUpload, uploadFile, UUID_REGX } from './utils'
+import { APP_URL, startUpload, uploadFile, ROOM_ID_REGEX } from './utils'
 
 test('Render homepage', async ({ page }) => {
   await page.goto(`${APP_URL}/`)
@@ -65,14 +65,17 @@ test('Download link', async ({ page, context }) => {
 
   await page.getByRole('button').click()
 
-  const downloadLink = page.getByRole('link', { name: UUID_REGX, exact: true })
+  const downloadLink = page.getByRole('link', {
+    name: ROOM_ID_REGEX,
+    exact: true,
+  })
   await expect(downloadLink).toBeVisible()
-  const downloadUUID = await downloadLink.textContent()
+  const downloadRoomId = await downloadLink.textContent()
   // @ts-ignore
   const downloadUrl = await downloadLink.evaluate((e) => e.href)
 
   const urlRegex = new RegExp(
-    String.raw`^${APP_URL}/download/${downloadUUID}/$`,
+    String.raw`^${APP_URL}/download/${downloadRoomId}/$`,
     'g',
   )
   expect(downloadUrl).toMatch(urlRegex)

@@ -11,7 +11,7 @@ const App: React.FC = () => (
     <main>
       <Routes>
         <Route path="/" element={<Uploader />} />
-        <Route path="/download/:id/" element={<Downloader />} />
+        <Route path="/download/:roomId/" element={<Downloader />} />
       </Routes>
     </main>
     <Footer />
