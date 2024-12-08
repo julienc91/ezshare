@@ -1,17 +1,17 @@
 import { test, expect, Page, BrowserContext } from '@playwright/test'
-import { APP_URL, startUpload, UUID_REGX } from './utils'
+import { APP_URL, startUpload, ROOM_ID_REGEX } from './utils'
 import * as fs from 'node:fs'
 import crypto from 'node:crypto'
 
 const setupFlow = async (page: Page, context: BrowserContext) => {
   await startUpload(page)
 
-  const downloadUUID = await page
-    .getByRole('link', { name: UUID_REGX, exact: true })
+  const roomId = await page
+    .getByRole('link', { name: ROOM_ID_REGEX, exact: true })
     .textContent()
 
   const downloaderPage = await context.newPage()
-  await downloaderPage.goto(`${APP_URL}/download/${downloadUUID}/`)
+  await downloaderPage.goto(`${APP_URL}/download/${roomId}/`)
   return [page, downloaderPage]
 }
 
@@ -20,23 +20,17 @@ test('Complete flow', async ({ page, context }) => {
 
   // Peer joins
   await expect(
-    downloaderPage.getByRole('heading', { name: 'Connected', exact: true }),
-  ).toBeVisible()
-  await expect(
-    downloaderPage.getByText('The connection was established.', {
+    downloaderPage.getByRole('heading', {
+      name: 'Waiting for connection',
       exact: true,
     }),
   ).toBeVisible()
 
+  // Uploader accepts connection
   const uploadStartButton = uploaderPage.getByRole('button', {
     name: 'Start',
     exact: true,
   })
-  await expect(
-    downloaderPage.getByText('Waiting for peer', { exact: true }),
-  ).not.toBeVisible()
-
-  // Uploader accepts connection
   await expect(uploadStartButton).toBeVisible()
   await uploadStartButton.click()
   await expect(
@@ -60,8 +54,7 @@ test('Complete flow', async ({ page, context }) => {
   await expect(downloadStartButton).toBeVisible()
   await downloadStartButton.click()
 
-  // Download ready
-  await expect(uploaderPage.getByText('100%', { exact: true })).toBeVisible()
+  // Download complete
   await expect(
     uploaderPage.getByText('Completed', { exact: true }),
   ).toBeVisible()
@@ -102,8 +95,7 @@ test('Complete flow', async ({ page, context }) => {
   )
 })
 
-test('Downloader disconnects', async ({ page, context, browserName }) => {
-  test.skip(browserName !== 'firefox', 'FIXME')
+test('Downloader disconnects', async ({ page, context }) => {
   const [uploaderPage, downloaderPage] = await setupFlow(page, context)
 
   const uploadStartButton = uploaderPage.getByRole('button', {
@@ -115,14 +107,16 @@ test('Downloader disconnects', async ({ page, context, browserName }) => {
     uploaderPage.getByText('Waiting for peer', { exact: true }),
   ).toBeVisible()
 
+  await downloaderPage.close({ runBeforeUnload: true })
   await downloaderPage.close()
+  expect(downloaderPage.isClosed()).toBe(true)
+
   await expect(
     uploaderPage.getByText('Disconnected', { exact: true }),
   ).toBeVisible()
 })
 
-test('Uploader disconnects', async ({ page, context, browserName }) => {
-  test.skip(browserName !== 'firefox', 'FIXME')
+test('Uploader disconnects', async ({ page, context }) => {
   const [uploaderPage, downloaderPage] = await setupFlow(page, context)
 
   await uploaderPage.getByRole('button', { name: 'Start', exact: true }).click()
@@ -151,6 +145,6 @@ test('Uploader disconnects', async ({ page, context, browserName }) => {
     downloaderPage.getByRole('heading', { name: 'Disconnected', exact: true }),
   ).toBeVisible()
   await expect(
-    downloaderPage.getByText('The connection was lost'),
+    downloaderPage.getByText('The uploader aborted the transfer.'),
   ).toBeVisible()
 })

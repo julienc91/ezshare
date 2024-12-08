@@ -54,7 +54,7 @@ main {
     border-bottom: $border;
     color: $black;
     display: inline-flex;
-    margin: 50px auto;
+    margin: 50px auto 20px;
     text-transform: uppercase;
   }
 }
@@ -250,7 +250,7 @@ hr {
 }
 
 .peer-list {
-  margin-top: 100px;
+  margin-top: 40px;
 
   ul {
     display: flex;

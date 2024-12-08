@@ -1,4 +1,3 @@
-import React from 'react'
 import { IconDefinition } from '@fortawesome/free-brands-svg-icons'
 import {
   faFile,
@@ -80,14 +79,4 @@ export const splitFileExtension = (filename: string): [string, string] => {
     filename = filename.slice(0, -extension.length)
   }
   return [filename, extension]
-}
-
-export const syncStateWithRef = <T>(
-  setState: React.Dispatch<React.SetStateAction<T>>,
-  ref: React.MutableRefObject<T>
-) => {
-  return (value: T) => {
-    setState(value)
-    ref.current = value
-  }
 }

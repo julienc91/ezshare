@@ -1,102 +1,103 @@
-import React, { useEffect, useRef, useState } from 'react'
-import Peer, { DataConnection } from 'peerjs'
-import {
-  faExclamationCircle,
-  faSpinner,
-} from '@fortawesome/free-solid-svg-icons'
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import React, { useCallback, useEffect, useState } from 'react'
 import DownloadLink from './DownloadLink'
 import PeerList from './PeerList'
-import { CLIENT_STATUSES } from '../constants'
-import { syncStateWithRef } from '../utils'
+import { trysteroConfig } from '../constants'
+import { joinRoom } from 'trystero/mqtt'
+import { selfId } from 'trystero'
+import { Peer } from '../types.ts'
+import { UploaderContext } from './context.ts'
 
-const WebrtcClient: React.FC<{ file: File; password?: string }> = ({
-  file,
-  password,
-}) => {
-  const [clientStatus, setClientStatus] = useState<CLIENT_STATUSES>(
-    CLIENT_STATUSES.CLIENT_STATUS_OPENING
-  )
-  const [peers, _setPeers] = useState<DataConnection[]>([])
-  const [id, setId] = useState<string>('')
+const roomId = `${selfId.slice(0, 4)}-${selfId.slice(4, 8)}-${selfId.slice(8, 16)}-${selfId.slice(16)}`
 
-  const clientRef = useRef<Peer | null>()
-  const peersRef = useRef<DataConnection[]>(peers)
+const WebrtcClient: React.FC<{ file: File }> = ({ file }) => {
+  const room = joinRoom(trysteroConfig, roomId)
+  const [peers, setPeers] = useState<Peer[]>([])
 
-  const setPeers = syncStateWithRef(_setPeers, peersRef)
+  const getPeerFromId = (peerId: string): Peer | undefined => {
+    return peers.find((peer) => peer.peerId === peerId)
+  }
 
-  const handleRefresh = () => document.location.reload()
+  const createPeer = (peerId: string) => {
+    setPeers([
+      ...peers,
+      {
+        peerId,
+        connectionStatus: 'connected',
+        transferStatus: null,
+        progress: 0,
+      },
+    ])
+  }
 
-  const handleBeforeUnload = (e: Event) => {
-    if (peersRef.current.length > 0) {
-      e.preventDefault()
-      return 'Are you sure? Your link will be lost'
+  const updatePeer = (peerId: string, updatedData: Partial<Peer>) => {
+    setPeers(
+      peers.map((peer) =>
+        peer.peerId === peerId ? { ...peer, ...updatedData } : peer,
+      ),
+    )
+  }
+
+  room.onPeerJoin(createPeer)
+  room.onPeerLeave((peerId) => {
+    updatePeer(peerId, { connectionStatus: 'disconnected' })
+  })
+
+  const setTransferStatus = (
+    peerId: string,
+    transferStatus: 'not_started' | 'in_progress',
+  ) => {
+    const peer = getPeerFromId(peerId)
+    if (
+      (peer?.transferStatus === null && transferStatus === 'not_started') ||
+      (peer?.transferStatus === 'not_started' &&
+        transferStatus === 'in_progress')
+    ) {
+      updatePeer(peerId, { transferStatus })
     }
   }
 
-  const handleNewPeer = (peer: DataConnection) => {
-    setPeers([...peersRef.current, peer])
+  const setProgress = (peerId: string, progress: number) => {
+    const peer = getPeerFromId(peerId)
+    if (peer) {
+      if (progress >= 100) {
+        updatePeer(peerId, { progress, transferStatus: 'completed' })
+      } else {
+        updatePeer(peerId, { progress, transferStatus: 'in_progress' })
+      }
+    }
   }
 
-  if (!clientRef.current) {
-    const client = new Peer({ host: '/', port: 9000 })
-    client.on('open', (id) => {
-      setId(id)
-      setClientStatus(CLIENT_STATUSES.CLIENT_STATUS_OPEN)
-    })
-    client.on('close', () => {
-      setClientStatus(CLIENT_STATUSES.CLIENT_STATUS_CLOSE)
-    })
-    client.on('error', () => {
-      setClientStatus(CLIENT_STATUSES.CLIENT_STATUS_ERROR)
-    })
-    client.on('connection', (peer: DataConnection) => {
-      peer.on('open', () => {
-        handleNewPeer(peer)
-      })
-    })
-    clientRef.current = client
-  }
+  const handleBeforeUnload = useCallback(
+    (e: Event) => {
+      if (
+        peers.some(
+          (peer) =>
+            peer.connectionStatus === 'connected' &&
+            peer.transferStatus !== 'completed',
+        )
+      ) {
+        e.preventDefault()
+        return 'Are you sure? Your link will be lost'
+      }
+    },
+    [peers],
+  )
 
   useEffect(() => {
     window.addEventListener('beforeunload', handleBeforeUnload)
     return () => {
       window.removeEventListener('beforeunload', handleBeforeUnload)
-      clientRef.current?.destroy()
     }
-  }, [])
+  }, [handleBeforeUnload])
 
-  const url = new URL(`/download/${id}/`, document.baseURI).href
+  const url = new URL(`/download/${roomId}/`, document.baseURI).href
   return (
-    <>
-      {id && (
-        <>
-          <DownloadLink id={id} url={url} />
-          <PeerList file={file} password={password} peers={peers} />
-        </>
-      )}
-      {!id && clientStatus === CLIENT_STATUSES.CLIENT_STATUS_OPENING && (
-        <>
-          <div>
-            <FontAwesomeIcon icon={faSpinner} />
-          </div>
-          <div>Waiting to establish a connection with the server</div>
-        </>
-      )}
-      {!id && clientStatus !== CLIENT_STATUSES.CLIENT_STATUS_OPENING && (
-        <>
-          <div>
-            <FontAwesomeIcon icon={faExclamationCircle} />
-          </div>
-          <div>Could not establish a connection to the server.</div>
-          <div>
-            <button className="default-button" onClick={handleRefresh}>
-              Try again
-            </button>
-          </div>
-        </>
-      )}
-    </>
+    <UploaderContext.Provider
+      value={{ file, room, peers, setTransferStatus, setProgress }}
+    >
+      <DownloadLink id={roomId} url={url} />
+      <PeerList />
+    </UploaderContext.Provider>
   )
 }
 

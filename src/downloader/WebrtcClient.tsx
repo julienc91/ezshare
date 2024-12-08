@@ -1,136 +1,101 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react'
-import Peer, { DataConnection } from 'peerjs'
+import React, { useContext, useEffect, useRef, useState } from 'react'
 import { faSave, faSpinner } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { CONN_STATUSES, STEPS } from '../constants'
+import { trysteroConfig } from '../constants'
+import { formatSize, getFileIcon, splitFileExtension } from '../utils'
+import { joinRoom } from 'trystero/mqtt'
 import {
-  formatSize,
-  getFileIcon,
-  splitFileExtension,
-  syncStateWithRef,
-} from '../utils'
+  FileInfo,
+  TransferAcceptPayload,
+  FileInfoPayload,
+  Peer,
+} from '../types.ts'
+import { DownloaderContext } from './context.ts'
 
-type Message = {
-  type: string
-  filesize: number
-  filename: string
-  filetype: string
-  chunks: number
-  chunk: ArrayBuffer
-}
+const WebrtcClient: React.FC<{ roomId: string }> = ({ roomId }) => {
+  const uploaderId = roomId.replace(/-/g, '')
+  const room = joinRoom(trysteroConfig, roomId)
 
-type FileInfo = {
-  size?: number
-  name?: string
-  type?: string
-  chunks?: number
-}
+  const [uploader, setUploader] = useState<Peer | null>(null)
+  const [fileInfo, setFileInfo] = useState<FileInfo | null>(null)
+  const [blob, setBlob] = useState<Blob | null>(null)
 
-const WebrtcClient: React.FC<{ id: string }> = ({ id }) => {
-  const [connStatus, setConnStatus] = useState<CONN_STATUSES>(
-    CONN_STATUSES.CONN_STATUS_OPENING
-  )
-  const [step, _setStep] = useState<STEPS>(STEPS.PROCESS_STEP_CONNECTED)
-  const [fileInfo, _setFileInfo] = useState<FileInfo>({})
-  const [chunks, _setChunks] = useState<Blob[]>([])
-  const [url, setUrl] = useState('')
-  const [downloadedSize, _setDownloadedSize] = useState(0)
+  const [sendSetupMessage, getSetupMessage] = room.makeAction<
+    FileInfoPayload | TransferAcceptPayload
+  >('setup')
+  const [_sendFile, getFile, onFileProgress] =
+    room.makeAction<ArrayBuffer>('file')
 
-  const clientRef = useRef<Peer | null>(null)
-  const connRef = useRef<DataConnection | null>(null)
-  const linkRef = useRef<HTMLAnchorElement>(null)
-
-  const stepRef = useRef<STEPS>(step)
-  const fileInfoRef = useRef<FileInfo>(fileInfo)
-  const chunksRef = useRef<Blob[]>(chunks)
-  const downloadedSizeRef = useRef<number>(downloadedSize)
-
-  const setStep = syncStateWithRef(_setStep, stepRef)
-  const setFileInfo = syncStateWithRef(_setFileInfo, fileInfoRef)
-  const setChunks = syncStateWithRef(_setChunks, chunksRef)
-  const setDownloadedSize = syncStateWithRef(
-    _setDownloadedSize,
-    downloadedSizeRef
-  )
-
-  const handleStart = useCallback(() => {
-    if (stepRef.current !== STEPS.PROCESS_STEP_INFO) {
-      return
+  room.onPeerLeave((peerId) => {
+    if (peerId === uploaderId) {
+      setUploader({
+        peerId: uploaderId,
+        connectionStatus: 'disconnected',
+        transferStatus: uploader?.transferStatus ?? null,
+        progress: uploader?.progress ?? 0,
+      })
     }
-    setStep(STEPS.PROCESS_STEP_CHUNK)
-    connRef.current?.send({ type: `${STEPS.PROCESS_STEP_INFO}-ack` })
-  }, [setStep])
+  })
 
-  const handleReceiveData = (data: unknown) => {
-    const message = data as Message
-    if (message.type === STEPS.PROCESS_STEP_INIT) {
-      setStep(STEPS.PROCESS_STEP_INIT)
-      connRef.current?.send({ type: `${STEPS.PROCESS_STEP_INIT}-ack` })
-    } else if (message.type === STEPS.PROCESS_STEP_INFO) {
-      setStep(STEPS.PROCESS_STEP_INFO)
-      setFileInfo({
-        size: message.filesize,
-        name: message.filename,
-        type: message.filetype,
-        chunks: message.chunks,
+  getSetupMessage((data, peerId) => {
+    if (peerId === uploaderId && data.type === 'metadata') {
+      setFileInfo(data)
+      setUploader({
+        peerId: uploaderId,
+        connectionStatus: 'connected',
+        transferStatus: 'not_started',
+        progress: 0,
       })
-    } else if (message.type === STEPS.PROCESS_STEP_CHUNK) {
-      const chunk = message.chunk
-      setChunks([...chunksRef.current, new Blob([chunk])])
-      setDownloadedSize(downloadedSizeRef.current + chunk.byteLength)
-      connRef.current?.send({ type: 'chunk-ack' })
-
-      if (chunksRef.current.length === fileInfoRef.current.chunks) {
-        const blob = new Blob(chunksRef.current, {
-          type: fileInfoRef.current.type,
-        })
-        const url = URL.createObjectURL(blob)
-        setStep(STEPS.PROCESS_STEP_COMPLETE)
-        setUrl(url)
-        linkRef.current?.click()
-      }
     }
-  }
+  })
 
-  if (!clientRef.current) {
-    const client = new Peer({ host: '/', port: 9000 })
-    client.on('open', () => {
-      connRef.current = client.connect(id)
-
-      const conn = connRef.current
-      conn.on('open', () => {
-        setConnStatus(CONN_STATUSES.CONN_STATUS_OPEN)
-      })
-      conn.on('data', handleReceiveData)
-      conn.on('close', () => {
-        setConnStatus(CONN_STATUSES.CONN_STATUS_CLOSE)
-      })
-      conn.on('error', () => {
-        setConnStatus(CONN_STATUSES.CONN_STATUS_ERROR)
-      })
-    })
-    clientRef.current = client
-  }
-
-  useEffect(() => {
-    return () => clientRef.current?.destroy()
-  }, [])
-
-  if (step !== STEPS.PROCESS_STEP_COMPLETE) {
-    if (connStatus === CONN_STATUSES.CONN_STATUS_OPENING) {
-      return <NotConnected />
-    } else if (
-      connStatus === CONN_STATUSES.CONN_STATUS_ERROR ||
-      connStatus === CONN_STATUSES.CONN_STATUS_CLOSE
+  getFile((payload, peerId) => {
+    if (
+      peerId === uploaderId &&
+      fileInfo &&
+      payload &&
+      uploader?.transferStatus === 'in_progress'
     ) {
-      return <Disconnected />
+      setBlob(new Blob([payload], { type: fileInfo.filetype }))
+      setUploader({ ...uploader, transferStatus: 'completed', progress: 100 })
     }
+  })
+
+  onFileProgress((percent, peerId) => {
+    if (peerId === uploader?.peerId) {
+      setUploader({ ...uploader, progress: percent * 100 })
+    }
+  })
+
+  if (!uploader) {
+    return <NotConnected />
   }
 
   if (
-    step === STEPS.PROCESS_STEP_CONNECTED ||
-    step === STEPS.PROCESS_STEP_INIT
+    uploader.connectionStatus === 'disconnected' &&
+    uploader.transferStatus !== 'completed'
   ) {
+    return <Disconnected />
+  }
+
+  const handleAcceptTransfer = async () => {
+    setUploader({ ...uploader, transferStatus: 'in_progress' })
+    await sendSetupMessage({ type: 'accept' }, uploader.peerId)
+  }
+
+  return (
+    <DownloaderContext.Provider
+      value={{ room, uploader, fileInfo, handleAcceptTransfer, blob }}
+    >
+      <DownloadInfo />
+    </DownloaderContext.Provider>
+  )
+}
+
+const DownloadInfo: React.FC = () => {
+  const { uploader, fileInfo, handleAcceptTransfer } =
+    useContext(DownloaderContext)
+  if (!fileInfo) {
     return (
       <section>
         <h1>Connected</h1>
@@ -145,62 +110,81 @@ const WebrtcClient: React.FC<{ id: string }> = ({ id }) => {
     )
   }
 
-  const [filename, extension] = splitFileExtension(fileInfo?.name || '')
-  const fileIcon = getFileIcon(fileInfo?.type || '')
-
-  let progress = 0
-  if (step === STEPS.PROCESS_STEP_COMPLETE) {
-    progress = 100
-  } else if (fileInfo.size && fileInfo.size > 0) {
-    progress = (downloadedSize * 100) / fileInfo.size
-  }
+  const [filename, extension] = splitFileExtension(fileInfo.filename || '')
+  const fileIcon = getFileIcon(fileInfo.filetype || '')
+  const progress = uploader.progress
 
   return (
     <section>
       <h1>
-        {step === STEPS.PROCESS_STEP_INFO && <>Ready to download</>}
-        {step === STEPS.PROCESS_STEP_CHUNK && <>Downloading</>}
-        {step === STEPS.PROCESS_STEP_COMPLETE && <>Download complete</>}
+        {uploader.transferStatus === 'not_started' && 'Ready to download'}
+        {uploader.transferStatus === 'in_progress' && 'Downloading'}
+        {uploader.transferStatus === 'completed' && 'Download complete'}
       </h1>
       <div>
         <div className="uploaded-file">
           <FontAwesomeIcon className="file-icon" icon={fileIcon} />
           <span className="file-name">{filename}</span>
           <span className="file-extension">{extension}</span>
-          <span className="file-size">{formatSize(fileInfo?.size || 0)}</span>
+          <span className="file-size">{formatSize(fileInfo.filesize)}</span>
         </div>
-        {step === STEPS.PROCESS_STEP_INFO && (
+        {uploader.transferStatus === 'not_started' && (
           <div>
-            <button className="default-button" onClick={handleStart}>
+            <button className="default-button" onClick={handleAcceptTransfer}>
               Download
             </button>
           </div>
         )}
-        {step === STEPS.PROCESS_STEP_CHUNK && (
+        {uploader.transferStatus === 'in_progress' && (
           <div className="progress">
             <div className="progress-inner" style={{ width: `${progress}%` }} />
             <label>{Math.round(progress * 100) / 100}%</label>
           </div>
         )}
-        {step === STEPS.PROCESS_STEP_COMPLETE && (
-          <div>
-            <p>Click the link below to save the file on your computer.</p>
-            <div className="save-link">
-              <FontAwesomeIcon icon={faSave} />
-              <a
-                href={url}
-                target="_blank"
-                rel="noopener noreferrer"
-                download={fileInfo?.name || ''}
-                ref={linkRef}
-              >
-                {fileInfo?.name || ''}
-              </a>
-            </div>
-          </div>
-        )}
+        {uploader.transferStatus === 'completed' && <TransferComplete />}
       </div>
     </section>
+  )
+}
+
+const TransferComplete: React.FC = () => {
+  const { fileInfo, blob } = useContext(DownloaderContext)
+  const linkRef = useRef<HTMLAnchorElement>(null)
+  const [blobUrl, setBlobUrl] = useState<string>('')
+
+  useEffect(() => {
+    if (blob && fileInfo && blobUrl === '') {
+      const url = URL.createObjectURL(blob)
+      setBlobUrl(url)
+    }
+  }, [blobUrl, blob])
+
+  useEffect(() => {
+    if (blobUrl !== '') {
+      linkRef.current?.click()
+    }
+  }, [blobUrl])
+
+  if (!fileInfo) {
+    return null
+  }
+
+  return (
+    <div>
+      <p>Click the link below to save the file on your computer.</p>
+      <div className="save-link">
+        <FontAwesomeIcon icon={faSave} />
+        <a
+          href={blobUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          download={fileInfo.filename}
+          ref={linkRef}
+        >
+          {fileInfo.filename}
+        </a>
+      </div>
+    </div>
   )
 }
 
@@ -224,7 +208,7 @@ const Disconnected: React.FC = () => {
     <section>
       <h1>Disconnected</h1>
       <div>
-        <p>The connection was lost.</p>
+        <p>The uploader aborted the transfer.</p>
       </div>
     </section>
   )
