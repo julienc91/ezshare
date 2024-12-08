@@ -2,8 +2,7 @@ import { Page } from '@playwright/test'
 import * as path from 'node:path'
 
 export const APP_URL = 'http://localhost:3000'
-export const UUID_REGX =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-5][0-9a-f]{3}-[089ab][0-9a-f]{3}-[0-9a-f]{12}$/
+export const ROOM_ID_REGEX = /^\w{4}-\w{4}-\w{8}-\w{4}$/
 
 export const uploadFile = async (page: Page) => {
   await page.goto(`${APP_URL}/`)

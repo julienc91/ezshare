@@ -1,4 +1,4 @@
-import React, { useCallback, useRef, useState } from 'react'
+import React, { useContext, useMemo } from 'react'
 import {
   faSpinner,
   faUser,
@@ -6,148 +6,100 @@ import {
   faUserSlash,
 } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { CONN_STATUSES, STEPS } from '../constants'
-import { DataConnection } from 'peerjs'
-import { syncStateWithRef } from '../utils'
+import { TransferAcceptPayload, FileInfoPayload, Peer } from '../types'
+import { UploaderContext } from './context.ts'
 
-const CHUNK_SIZE = 1024 * 1024
+const PeerItem: React.FC<{
+  peer: Peer
+}> = ({ peer }) => {
+  const { room, file, setTransferStatus, setProgress } =
+    useContext(UploaderContext)
+  const [sendSetupMessage, getSetupMessage] = room.makeAction<
+    FileInfoPayload | TransferAcceptPayload
+  >('setup')
+  const [sendFile] = room.makeAction('file')
 
-const Peer: React.FC<{
-  file: File
-  password?: string
-  peer: DataConnection
-}> = ({ file, peer }) => {
-  const [status, setStatus] = useState<CONN_STATUSES>(
-    CONN_STATUSES.CONN_STATUS_OPEN
-  )
-  const [start, setStart] = useState(false)
-  const [chunkNumber, _setChunkNumber] = useState(0)
-  const [step, _setStep] = useState<STEPS>(STEPS.PROCESS_STEP_CONNECTED)
-  const [isInitialized, setIsInitialized] = useState(false)
-
-  const chunkNumberRef = useRef<number>(chunkNumber)
-  const stepRef = useRef<STEPS>(step)
-
-  const setChunkNumber = syncStateWithRef(_setChunkNumber, chunkNumberRef)
-  const setStep = syncStateWithRef(_setStep, stepRef)
-
-  const totalChunks = Math.ceil(file.size / CHUNK_SIZE) || 1
-
-  if (!isInitialized) {
-    setIsInitialized(true)
-    peer.on('close', () => {
-      setStatus(CONN_STATUSES.CONN_STATUS_CLOSE)
-    })
-    peer.on('error', () => {
-      setStatus(CONN_STATUSES.CONN_STATUS_ERROR)
-    })
-    peer.on('data', (data: unknown) => {
-      const message = data as MessageEvent
-      const chunkNumber = chunkNumberRef.current
-      const step = stepRef.current
-
-      const sendChunk = (n: number) => {
-        // step 3: send chunk
-        file.slice(
-          CHUNK_SIZE * n,
-          Math.min(CHUNK_SIZE * (n + 1), file.size)
-        ).arrayBuffer().then((chunk) => {
-          peer.send({
-            type: STEPS.PROCESS_STEP_CHUNK,
-            chunk,
-            chunkNumber: n,
-          })
-        })
-      }
-
-      switch (message.type) {
-        case `${STEPS.PROCESS_STEP_INIT}-ack`:
-          if (step === STEPS.PROCESS_STEP_INIT) {
-            setStep(STEPS.PROCESS_STEP_INFO)
-            // step 2: send file info
-            peer.send({
-              type: STEPS.PROCESS_STEP_INFO,
-              filesize: file.size,
-              filename: file.name,
-              filetype: file.type,
-              chunks: totalChunks,
-            })
-          }
-          break
-
-        case `${STEPS.PROCESS_STEP_INFO}-ack`:
-          if (step === STEPS.PROCESS_STEP_INFO) {
-            setStep(STEPS.PROCESS_STEP_CHUNK)
-            sendChunk(0)
-          }
-          break
-
-        case `${STEPS.PROCESS_STEP_CHUNK}-ack`:
-          if (step === STEPS.PROCESS_STEP_CHUNK) {
-            const newChunkNumber = chunkNumber + 1
-            setChunkNumber(newChunkNumber)
-            if (newChunkNumber >= totalChunks) {
-              setStep(STEPS.PROCESS_STEP_COMPLETE)
-            } else {
-              sendChunk(newChunkNumber)
-            }
-          }
-          break
-
-        default:
-          break
-      }
-    })
-  }
-
-  const handleStart = useCallback(() => {
-    if (step === STEPS.PROCESS_STEP_CONNECTED && !start) {
-      setStart(true)
-      setStep(STEPS.PROCESS_STEP_INIT)
-      peer.send({ type: STEPS.PROCESS_STEP_INIT })
+  const fileMetadata = useMemo(() => {
+    return {
+      filesize: file.size,
+      filename: file.name,
+      filetype: file.type,
     }
-  }, [peer, setStart, start, step, setStep])
+  }, [file])
 
-  let icon = faUser
-  if (step === STEPS.PROCESS_STEP_COMPLETE) {
-    icon = faUserCheck
-  } else if (
-    status === CONN_STATUSES.CONN_STATUS_CLOSE ||
-    status === CONN_STATUSES.CONN_STATUS_ERROR
-  ) {
-    icon = faUserSlash
+  const handleStartTransfer = async () => {
+    await sendSetupMessage(
+      {
+        type: 'metadata',
+        ...fileMetadata,
+      },
+      peer.peerId,
+    )
+    setTransferStatus(peer.peerId, 'not_started')
   }
 
-  let progress = (100 * chunkNumber) / totalChunks
-  if (step !== STEPS.PROCESS_STEP_COMPLETE) {
-    progress = Math.min(progress, 99.99) // dont show 100% because of rounding if not complete
-  }
+  getSetupMessage(async (payload, peerId) => {
+    if (
+      payload.type === 'accept' &&
+      peerId === peer.peerId &&
+      peer.transferStatus === 'not_started'
+    ) {
+      setTransferStatus(peer.peerId, 'in_progress')
+      const buffer = await file.arrayBuffer()
+      await sendFile(buffer, peer.peerId, fileMetadata, (progress) => {
+        setProgress(peer.peerId, progress * 100)
+      })
+    }
+  })
 
-  return (
-    <div className="peer">
-      <FontAwesomeIcon className="user-icon" icon={icon} />
-      {status === CONN_STATUSES.CONN_STATUS_OPEN && !start && (
-        <button onClick={handleStart}>Start</button>
-      )}
-      {status === CONN_STATUSES.CONN_STATUS_OPEN && start && chunkNumber <= 0 && (
+  let inner
+  if (peer.transferStatus === 'completed') {
+    inner = (
+      <>
+        <FontAwesomeIcon className="user-icon" icon={faUserCheck} />
+        <div>Completed</div>
+      </>
+    )
+  } else if (peer.connectionStatus === 'disconnected') {
+    inner = (
+      <>
+        <FontAwesomeIcon className="user-icon" icon={faUserSlash} />
+        <div>Disconnected</div>
+      </>
+    )
+  } else if (peer.transferStatus === null) {
+    inner = (
+      <>
+        <FontAwesomeIcon className="user-icon" icon={faUser} />
+        <button onClick={handleStartTransfer}>Start</button>
+      </>
+    )
+  } else if (peer.transferStatus === 'not_started') {
+    inner = (
+      <>
+        <FontAwesomeIcon className="user-icon" icon={faUser} />
         <div>
           <div>Waiting for peer</div>
           <FontAwesomeIcon className="loading-icon" icon={faSpinner} />
         </div>
-      )}
-      {start && chunkNumber > 0 && (
+      </>
+    )
+  } else if (peer.transferStatus === 'in_progress') {
+    inner = (
+      <>
+        <FontAwesomeIcon className="user-icon" icon={faUser} />
         <div className="progress">
-          <div className="progress-inner" style={{ width: `${progress}%` }} />
-          <label>{Math.round(progress * 100) / 100}%</label>
+          <div
+            className="progress-inner"
+            style={{ width: `${peer.progress}%` }}
+          />
+          <label>{Math.round(peer.progress * 100) / 100}%</label>
         </div>
-      )}
-      {step === STEPS.PROCESS_STEP_COMPLETE && <div>Completed</div>}
-      {step !== STEPS.PROCESS_STEP_COMPLETE &&
-        status === CONN_STATUSES.CONN_STATUS_CLOSE && <div>Disconnected</div>}
-      {step !== STEPS.PROCESS_STEP_COMPLETE &&
-        status === CONN_STATUSES.CONN_STATUS_ERROR && <div>Error</div>}
-    </div>
-  )
+      </>
+    )
+  }
+
+  return <div className="peer">{inner}</div>
 }
 
-export default Peer
+export default PeerItem
