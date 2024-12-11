@@ -3,11 +3,11 @@ import { useParams } from 'react-router-dom'
 import WebrtcClient from './WebrtcClient'
 
 const Downloader: React.FC = () => {
-  const { id } = useParams<{ id: string }>()
-  if (!id) {
+  const { roomId } = useParams<{ roomId: string }>()
+  if (!roomId) {
     return null
   }
-  return <WebrtcClient id={id} />
+  return <WebrtcClient roomId={roomId} />
 }
 
 export default Downloader
