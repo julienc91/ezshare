@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import DownloadLink from './DownloadLink'
 import PeerList from './PeerList'
 import { trysteroConfig } from '../constants'
@@ -7,9 +7,19 @@ import { selfId } from 'trystero'
 import { Peer } from '../types.ts'
 import { UploaderContext } from './context.ts'
 
-const roomId = `${selfId.slice(0, 4)}-${selfId.slice(4, 8)}-${selfId.slice(8, 16)}-${selfId.slice(16)}`
+const getRoomId = () => {
+  if (import.meta.env.VITE_TESTING_PLAYWRIGHT) {
+    const params = new URLSearchParams(document.location.search)
+    const forcedRoomId = params.get('__playwright_room_id')
+    if (forcedRoomId?.length) {
+      return forcedRoomId
+    }
+  }
+  return `${selfId.slice(0, 4)}-${selfId.slice(4, 8)}-${selfId.slice(8, 16)}-${selfId.slice(16)}`
+}
 
 const WebrtcClient: React.FC<{ file: File }> = ({ file }) => {
+  const roomId = useMemo(() => getRoomId(), [])
   const room = joinRoom(trysteroConfig, roomId)
   const [peers, setPeers] = useState<Peer[]>([])
 

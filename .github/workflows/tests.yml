@@ -16,10 +16,6 @@ jobs:
     - uses: actions/setup-node@v4
       with:
         node-version: 22
-    - name: Build docker image
-      run: docker build . -t ${{ github.repository }}:${{ github.sha }}
-    - name: Run docker container
-      run: docker run -d -p 3000:3000 ${{ github.repository }}:${{ github.sha }}
     - name: Install playwright
       run: |
         yarn

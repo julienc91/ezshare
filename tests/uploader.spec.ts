@@ -83,10 +83,11 @@ test('Download link', async ({ page, context }) => {
 })
 
 test('Display QR Code', async ({ page }) => {
-  await startUpload(page)
+  await startUpload(page, { roomId: '1234-ABCD-12345678-EFGH' })
 
   await expect(page.getByRole('img')).toBeVisible()
   await expect(page.getByRole('img')).toHaveCount(1)
+  await expect(page.getByRole('img')).toHaveScreenshot('qrcode.png')
 })
 
 test('Disconnect without downloader', async ({ page }) => {
