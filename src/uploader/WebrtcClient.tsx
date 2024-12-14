@@ -8,7 +8,7 @@ import { Peer } from '../types.ts'
 import { UploaderContext } from './context.ts'
 
 const getRoomId = () => {
-  if (import.meta.env.VITE_TESTING_PLAYWRIGHT) {
+  if (import.meta.env.VITE_TESTING_E2E) {
     const params = new URLSearchParams(document.location.search)
     const forcedRoomId = params.get('__playwright_room_id')
     if (forcedRoomId?.length) {
