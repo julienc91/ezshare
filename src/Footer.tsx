@@ -1,6 +1,7 @@
 import React from 'react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faGithub } from '@fortawesome/free-brands-svg-icons'
+import DarkModeSwitcher from './DarkModeSwitcher.tsx'
 
 const Footer: React.FC = () => (
   <footer>
@@ -11,6 +12,7 @@ const Footer: React.FC = () => (
       <FontAwesomeIcon icon={faGithub} />
       <a href="https://github.com/julienc91/ezshare">See on GitHub</a>
     </div>
+    <DarkModeSwitcher />
   </footer>
 )
 

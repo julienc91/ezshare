@@ -148,3 +148,18 @@ test('Uploader disconnects', async ({ page, context }) => {
     downloaderPage.getByText('The uploader aborted the transfer.'),
   ).toBeVisible()
 })
+
+test('Switch theme', async ({ page }) => {
+  await page.goto(`${APP_URL}/`)
+  const toggler = page.getByRole('button', { name: 'Change theme' })
+  await expect(toggler).toBeVisible()
+
+  const locator = page.locator('[data-theme="dark"]')
+  await expect(locator).toHaveCount(0)
+
+  await toggler.click()
+  await expect(locator).toHaveCount(1)
+
+  await toggler.click()
+  await expect(locator).toHaveCount(0)
+})
