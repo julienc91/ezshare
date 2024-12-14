@@ -1,4 +1,11 @@
-node_modules
-build
+/.github/
 .gitignore
+.idea/
+/doc/
 Dockerfile
+node_modules
+/test-results/
+/tests/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
