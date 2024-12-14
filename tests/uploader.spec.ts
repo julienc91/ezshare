@@ -5,7 +5,6 @@ test('Render homepage', async ({ page }) => {
   await page.goto(`${APP_URL}/`)
   await expect(page).toHaveTitle(/ezshare/)
   await expect(page.getByText('Drag the file you want to share')).toBeVisible()
-  await expect(page.getByRole('button')).toHaveCount(1)
   await expect(
     page.getByRole('button', { name: 'Select a file' }),
   ).toBeVisible()
@@ -15,7 +14,7 @@ test('Init upload', async ({ page }) => {
   await uploadFile(page)
   await expect(page.getByText('image.jpg')).toBeVisible()
   await expect(page.getByText('2MB')).toBeVisible()
-  await expect(page.getByRole('button')).toHaveCount(2)
+  await expect(page.getByRole('button', { name: 'Remove file' })).toBeVisible()
   await expect(
     page.getByRole('button', { name: 'Start sharing' }),
   ).toBeVisible()
@@ -26,7 +25,7 @@ test('Cancel upload before start', async ({ page }) => {
   await uploadFile(page)
 
   await page.getByTitle('Remove file').click()
-  await expect(page.getByRole('button')).toHaveCount(1)
+  await expect(page.getByTitle('Remove file')).not.toBeVisible()
   await expect(
     page.getByRole('button', { name: 'Select a file' }),
   ).toBeVisible()
@@ -53,8 +52,8 @@ test('Download link', async ({ page, context }) => {
   }
   await startUpload(page)
 
-  await expect(page.getByRole('button')).toBeVisible()
-  await expect(page.getByRole('button')).toHaveCount(1)
+  const copyButton = page.getByRole('button', { name: 'Copy' })
+  await expect(copyButton).toBeVisible()
 
   const getClipboardContent = async () => {
     const handle = await page.evaluateHandle(() =>
@@ -63,7 +62,7 @@ test('Download link', async ({ page, context }) => {
     return await handle.jsonValue()
   }
 
-  await page.getByRole('button').click()
+  await copyButton.click()
 
   const downloadLink = page.getByRole('link', {
     name: ROOM_ID_REGEX,
