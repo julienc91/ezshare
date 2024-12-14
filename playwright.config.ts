@@ -71,10 +71,10 @@ export default defineConfig({
   ],
 
   /* Run your local dev server before starting the tests */
-  webServer: {
-    command: 'yarn start --port 3000',
-    url: 'http://localhost:3000',
-    reuseExistingServer: !process.env.CI,
-    env: { VITE_TESTING_PLAYWRIGHT: 'true' },
-  },
+  // webServer: {
+  //   command: 'yarn start --port 3000',
+  //   url: 'http://localhost:3000',
+  //   reuseExistingServer: !process.env.CI,
+  //   env: { VITE_TESTING_E2E: 'true' },
+  // },
 })
