@@ -1,4 +1,4 @@
-FROM node:22 AS builder
+FROM node:24 AS builder
 
 WORKDIR /app
 COPY package.json yarn.lock ./
@@ -11,12 +11,12 @@ COPY . .
 
 RUN yarn build
 
-FROM node:22-slim AS runtime
+FROM node:24-slim AS runtime
 
 RUN useradd --user-group --create-home --shell /bin/false appuser \
     && mkdir -p /app/dist \
     && chown -R appuser:appuser /app \
-    && yarn global add serve@^14.0.1
+    && yarn global add serve@^14.2.4
 
 WORKDIR /app
 
