@@ -25,17 +25,17 @@ This will start two services, the web application on port 3000, and the PeerJS s
 Install dependencies:
 
 ```
-$ yarn
+$ npm ci
 ```
 
 Create a production build:
 
 ```
-$ yarn build
+$ npm run build
 ```
 
 Start the web application on port 3000:
 
 ```
-$ yarn serve -s dist/
+$ npx serve -s dist/
 ```
