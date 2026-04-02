@@ -14,7 +14,7 @@
     "react-dropzone": "^15.0.0",
     "react-router-dom": "^7.0.0",
     "serve": "^14.0.1",
-    "trystero": "^0.22.0"
+    "trystero": "^0.23.0"
   },
   "devDependencies": {
     "@playwright/test": "^1.49.0",
