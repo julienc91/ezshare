@@ -8,13 +8,13 @@
     "@fortawesome/free-regular-svg-icons": "^7.3.1",
     "@fortawesome/free-solid-svg-icons": "^7.3.1",
     "@fortawesome/react-fontawesome": "^3.5.0",
+    "@trystero-p2p/mqtt": "^0.25.3",
     "qrcode.react": "^4.0.0",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "react-dropzone": "^20.1.0",
     "react-router-dom": "^7.0.0",
-    "serve": "^14.0.1",
-    "trystero": "^0.22.0"
+    "serve": "^14.0.1"
   },
   "overrides": {
     "uuid": "^11.1.1"

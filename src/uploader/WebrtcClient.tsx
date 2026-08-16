@@ -2,8 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import DownloadLink from './DownloadLink'
 import PeerList from './PeerList'
 import { trysteroConfig } from '../constants'
-import { joinRoom } from 'trystero/mqtt'
-import { selfId } from 'trystero'
+import { joinRoom, selfId } from '@trystero-p2p/mqtt'
 import { Peer } from '../types.ts'
 import { UploaderContext } from './context.ts'
 
@@ -20,7 +19,7 @@ const getRoomId = () => {
 
 const WebrtcClient: React.FC<{ file: File }> = ({ file }) => {
   const roomId = useMemo(() => getRoomId(), [])
-  const room = joinRoom(trysteroConfig, roomId)
+  const room = useMemo(() => joinRoom(trysteroConfig, roomId), [roomId])
   const [peers, setPeers] = useState<Peer[]>([])
 
   const getPeerFromId = (peerId: string): Peer | undefined => {
@@ -28,6 +27,9 @@ const WebrtcClient: React.FC<{ file: File }> = ({ file }) => {
   }
 
   const createPeer = (peerId: string) => {
+    if (getPeerFromId(peerId)) {
+      return
+    }
     setPeers([
       ...peers,
       {
@@ -47,10 +49,10 @@ const WebrtcClient: React.FC<{ file: File }> = ({ file }) => {
     )
   }
 
-  room.onPeerJoin(createPeer)
-  room.onPeerLeave((peerId) => {
+  room.onPeerJoin = createPeer
+  room.onPeerLeave = (peerId) => {
     updatePeer(peerId, { connectionStatus: 'disconnected' })
-  })
+  }
 
   const setTransferStatus = (
     peerId: string,

@@ -1,9 +1,9 @@
-import React, { useContext, useEffect, useRef, useState } from 'react'
+import React, { useContext, useEffect, useMemo, useRef, useState } from 'react'
 import { faSave, faSpinner } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { trysteroConfig } from '../constants'
 import { formatSize, getFileIcon, splitFileExtension } from '../utils'
-import { joinRoom } from 'trystero/mqtt'
+import { joinRoom } from '@trystero-p2p/mqtt'
 import {
   FileInfo,
   TransferAcceptPayload,
@@ -14,19 +14,19 @@ import { DownloaderContext } from './context.ts'
 
 const WebrtcClient: React.FC<{ roomId: string }> = ({ roomId }) => {
   const uploaderId = roomId.replace(/-/g, '')
-  const room = joinRoom(trysteroConfig, roomId)
+  const room = useMemo(() => joinRoom(trysteroConfig, roomId), [roomId])
 
   const [uploader, setUploader] = useState<Peer | null>(null)
   const [fileInfo, setFileInfo] = useState<FileInfo | null>(null)
   const [blob, setBlob] = useState<Blob | null>(null)
 
-  const [sendSetupMessage, getSetupMessage] = room.makeAction<
-    FileInfoPayload | TransferAcceptPayload
-  >('setup')
-  const [_sendFile, getFile, onFileProgress] =
-    room.makeAction<ArrayBuffer>('file')
+  const setupAction = useMemo(
+    () => room.makeAction<FileInfoPayload | TransferAcceptPayload>('setup'),
+    [room],
+  )
+  const fileAction = useMemo(() => room.makeAction<ArrayBuffer>('file'), [room])
 
-  room.onPeerLeave((peerId) => {
+  room.onPeerLeave = (peerId) => {
     if (peerId === uploaderId) {
       setUploader({
         peerId: uploaderId,
@@ -35,9 +35,9 @@ const WebrtcClient: React.FC<{ roomId: string }> = ({ roomId }) => {
         progress: uploader?.progress ?? 0,
       })
     }
-  })
+  }
 
-  getSetupMessage((data, peerId) => {
+  setupAction.onMessage = (data, { peerId }) => {
     if (peerId === uploaderId && data.type === 'metadata') {
       setFileInfo(data)
       setUploader({
@@ -47,9 +47,9 @@ const WebrtcClient: React.FC<{ roomId: string }> = ({ roomId }) => {
         progress: 0,
       })
     }
-  })
+  }
 
-  getFile((payload, peerId) => {
+  fileAction.onMessage = (payload, { peerId }) => {
     if (
       peerId === uploaderId &&
       fileInfo &&
@@ -59,13 +59,13 @@ const WebrtcClient: React.FC<{ roomId: string }> = ({ roomId }) => {
       setBlob(new Blob([payload], { type: fileInfo.filetype }))
       setUploader({ ...uploader, transferStatus: 'completed', progress: 100 })
     }
-  })
+  }
 
-  onFileProgress((percent, peerId) => {
+  fileAction.onReceiveProgress = (percent, { peerId }) => {
     if (peerId === uploader?.peerId) {
       setUploader({ ...uploader, progress: percent * 100 })
     }
-  })
+  }
 
   if (!uploader) {
     return <NotConnected />
@@ -80,7 +80,7 @@ const WebrtcClient: React.FC<{ roomId: string }> = ({ roomId }) => {
 
   const handleAcceptTransfer = async () => {
     setUploader({ ...uploader, transferStatus: 'in_progress' })
-    await sendSetupMessage({ type: 'accept' }, uploader.peerId)
+    await setupAction.send({ type: 'accept' }, { target: uploader.peerId })
   }
 
   return (

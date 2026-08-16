@@ -14,10 +14,11 @@ const PeerItem: React.FC<{
 }> = ({ peer }) => {
   const { room, file, setTransferStatus, setProgress } =
     useContext(UploaderContext)
-  const [sendSetupMessage, getSetupMessage] = room.makeAction<
-    FileInfoPayload | TransferAcceptPayload
-  >('setup')
-  const [sendFile] = room.makeAction('file')
+  const setupAction = useMemo(
+    () => room.makeAction<FileInfoPayload | TransferAcceptPayload>('setup'),
+    [room],
+  )
+  const fileAction = useMemo(() => room.makeAction<ArrayBuffer>('file'), [room])
 
   const fileMetadata = useMemo(() => {
     return {
@@ -28,17 +29,17 @@ const PeerItem: React.FC<{
   }, [file])
 
   const handleStartTransfer = async () => {
-    await sendSetupMessage(
+    await setupAction.send(
       {
         type: 'metadata',
         ...fileMetadata,
       },
-      peer.peerId,
+      { target: peer.peerId },
     )
     setTransferStatus(peer.peerId, 'not_started')
   }
 
-  getSetupMessage(async (payload, peerId) => {
+  setupAction.onMessage = async (payload, { peerId }) => {
     if (
       payload.type === 'accept' &&
       peerId === peer.peerId &&
@@ -46,11 +47,15 @@ const PeerItem: React.FC<{
     ) {
       setTransferStatus(peer.peerId, 'in_progress')
       const buffer = await file.arrayBuffer()
-      await sendFile(buffer, peer.peerId, fileMetadata, (progress) => {
-        setProgress(peer.peerId, progress * 100)
+      await fileAction.send(buffer, {
+        target: peer.peerId,
+        metadata: fileMetadata,
+        onProgress: (progress) => {
+          setProgress(peer.peerId, progress * 100)
+        },
       })
     }
-  })
+  }
 
   let inner
   if (peer.transferStatus === 'completed') {

@@ -1,6 +1,6 @@
 import { createContext } from 'react'
 import { Peer } from '../types.ts'
-import { Room } from 'trystero'
+import { Room } from '@trystero-p2p/mqtt'
 
 export const UploaderContext = createContext<{
   file: File
