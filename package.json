@@ -28,7 +28,7 @@
     "prettier": "^3.9.6",
     "sass": "^1.102.0",
     "typescript": "^7.0.2",
-    "vite": "^7.0.0"
+    "vite": "^8.2.1"
   },
   "scripts": {
     "start": "vite",
