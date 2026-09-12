@@ -10,12 +10,12 @@ $border-height: 10px;
 $border: $border-height solid $yellow;
 
 :root {
-  --color-background: #fcfcfc;;
-  --color-text: #111;;
+  --color-background: #fcfcfc;
+  --color-text: #111;
   --color-dropzone: #f0f0f0;
 }
 
-[data-theme="dark"] {
+[data-theme='dark'] {
   --color-background: #222;
   --color-text: #fafafa;
   --color-dropzone: #808080;
