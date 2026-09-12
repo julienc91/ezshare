@@ -1,4 +1,4 @@
-FROM node:24 AS builder
+FROM node:26 AS builder
 
 WORKDIR /app
 COPY package.json package-lock.json ./
@@ -11,7 +11,7 @@ COPY . .
 
 RUN npm run build
 
-FROM node:24-slim AS runtime
+FROM node:26-slim AS runtime
 
 RUN useradd --user-group --create-home --shell /bin/false appuser \
     && mkdir -p /app/dist \
