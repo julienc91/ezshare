@@ -20,4 +20,12 @@ export enum STEPS {
   PROCESS_STEP_COMPLETE = 'complete',
 }
 
-export const trysteroConfig = { appId: 'ezshare' }
+const relayUrls = (import.meta.env.VITE_RELAY_URLS ?? '')
+  .split(',')
+  .map((url: string) => url.trim())
+  .filter(Boolean)
+
+export const trysteroConfig = {
+  appId: 'ezshare',
+  ...(relayUrls.length ? { relayUrls } : {}),
+}

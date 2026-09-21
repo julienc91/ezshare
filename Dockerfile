@@ -6,6 +6,9 @@ COPY package.json package-lock.json ./
 ARG TESTING_E2E
 ENV VITE_TESTING_E2E=${TESTING_E2E}
 
+ARG RELAY_URLS
+ENV VITE_RELAY_URLS=${RELAY_URLS}
+
 RUN npm ci
 COPY . .
 
