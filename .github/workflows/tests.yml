@@ -37,6 +37,10 @@ jobs:
         run: |
           npm ci
           npx playwright install --with-deps
+      # Firefox looks up its default ICE address over IPv6 when IPv6 is enabled,
+      # but runners have no IPv6 route: it then gathers no candidates at all
+      - name: Disable IPv6
+        run: sudo sysctl -w net.ipv6.conf.all.disable_ipv6=1 net.ipv6.conf.default.disable_ipv6=1
       - name: Run Playwright tests
         run: npx playwright test
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
