@@ -27,5 +27,5 @@ const relayUrls = (import.meta.env.VITE_RELAY_URLS ?? '')
 
 export const trysteroConfig = {
   appId: 'ezshare',
-  ...(relayUrls.length ? { relayUrls } : {}),
+  ...(relayUrls.length ? { relayConfig: { urls: relayUrls } } : {}),
 }
