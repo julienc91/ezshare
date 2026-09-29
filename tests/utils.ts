@@ -1,7 +1,7 @@
 import { Page } from '@playwright/test'
 import * as path from 'node:path'
 
-export const APP_URL = 'http://localhost:3000'
+export const APP_URL = process.env.APP_URL ?? 'http://localhost:3000'
 export const ROOM_ID_REGEX = /^\w{4}-\w{4}-\w{8}-\w{4}$/
 
 export const uploadFile = async (page: Page, params?: { roomId: string }) => {
