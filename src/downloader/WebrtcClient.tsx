@@ -2,7 +2,12 @@ import React, { useContext, useEffect, useMemo, useRef, useState } from 'react'
 import { faSave, faSpinner } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { trysteroConfig } from '../constants'
-import { formatSize, getFileIcon, splitFileExtension } from '../utils'
+import {
+  arrayBufferToBlob,
+  formatSize,
+  getFileIcon,
+  splitFileExtension,
+} from '../utils'
 import { joinRoom } from '@trystero-p2p/mqtt'
 import {
   FileInfo,
@@ -55,7 +60,7 @@ const WebrtcClient: React.FC<{ roomId: string }> = ({ roomId }) => {
       payload &&
       uploader?.transferStatus === 'in_progress'
     ) {
-      setBlob(new Blob([payload], { type: fileInfo.filetype }))
+      setBlob(arrayBufferToBlob(payload, fileInfo.filetype))
       setUploader({ ...uploader, transferStatus: 'completed', progress: 100 })
     }
   }
