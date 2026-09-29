@@ -130,16 +130,16 @@ test('Uploader disconnects', async ({ page, context }) => {
     }),
   ).toBeVisible()
 
-  let hasDialog = false
-  uploaderPage.on('dialog', async (dialog) => {
-    expect(dialog.type()).toBe('beforeunload')
-    hasDialog = true
-    await dialog.accept()
-  })
+  // Wait for the dialog instead of force-closing the page right away:
+  // Firefox dispatches it asynchronously and a second close() would skip it
+  const dialogPromise = uploaderPage.waitForEvent('dialog')
+  const closePromise = uploaderPage.waitForEvent('close')
   await uploaderPage.close({ runBeforeUnload: true })
-  await uploaderPage.close()
+  const dialog = await dialogPromise
+  expect(dialog.type()).toBe('beforeunload')
+  await dialog.accept()
+  await closePromise
   expect(uploaderPage.isClosed()).toBe(true)
-  expect(hasDialog).toBe(true)
 
   await expect(
     downloaderPage.getByRole('heading', { name: 'Disconnected', exact: true }),
