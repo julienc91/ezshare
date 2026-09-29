@@ -2,8 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import DownloadLink from './DownloadLink'
 import PeerList from './PeerList'
 import { trysteroConfig } from '../constants'
-import { joinRoom } from 'trystero/mqtt'
-import { selfId } from 'trystero'
+import { joinRoom, selfId } from '@trystero-p2p/mqtt'
 import { Peer } from '../types.ts'
 import { UploaderContext } from './context.ts'
 
@@ -20,7 +19,7 @@ const getRoomId = () => {
 
 const WebrtcClient: React.FC<{ file: File }> = ({ file }) => {
   const roomId = useMemo(() => getRoomId(), [])
-  const room = joinRoom(trysteroConfig, roomId)
+  const room = useMemo(() => joinRoom(trysteroConfig, roomId), [roomId])
   const [peers, setPeers] = useState<Peer[]>([])
 
   const getPeerFromId = (peerId: string): Peer | undefined => {
@@ -28,29 +27,41 @@ const WebrtcClient: React.FC<{ file: File }> = ({ file }) => {
   }
 
   const createPeer = (peerId: string) => {
-    setPeers([
-      ...peers,
-      {
-        peerId,
-        connectionStatus: 'connected',
-        transferStatus: null,
-        progress: 0,
-      },
-    ])
+    setPeers((peers) =>
+      peers.some((peer) => peer.peerId === peerId)
+        ? peers
+        : [
+            ...peers,
+            {
+              peerId,
+              connectionStatus: 'connected',
+              transferStatus: null,
+              progress: 0,
+            },
+          ],
+    )
   }
 
   const updatePeer = (peerId: string, updatedData: Partial<Peer>) => {
-    setPeers(
+    setPeers((peers) =>
       peers.map((peer) =>
         peer.peerId === peerId ? { ...peer, ...updatedData } : peer,
       ),
     )
   }
 
-  room.onPeerJoin(createPeer)
-  room.onPeerLeave((peerId) => {
-    updatePeer(peerId, { connectionStatus: 'disconnected' })
-  })
+  // The onPeerJoin setter synchronously replays already connected peers,
+  // so handlers must not be (re)assigned during render
+  useEffect(() => {
+    room.onPeerJoin = createPeer
+    room.onPeerLeave = (peerId) => {
+      updatePeer(peerId, { connectionStatus: 'disconnected' })
+    }
+    return () => {
+      room.onPeerJoin = null
+      room.onPeerLeave = null
+    }
+  }, [room])
 
   const setTransferStatus = (
     peerId: string,

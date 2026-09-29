@@ -1,5 +1,5 @@
 import { createContext } from 'react'
-import { Room } from 'trystero'
+import type { Room } from '@trystero-p2p/mqtt'
 import { FileInfo, Peer } from '../types.ts'
 
 export const DownloaderContext = createContext<{
