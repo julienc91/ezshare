@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import React, { useEffect, useMemo, useRef, useState } from 'react'
 import DownloadLink from './DownloadLink'
 import PeerList from './PeerList'
 import { trysteroConfig } from '../constants'
@@ -88,10 +88,14 @@ const WebrtcClient: React.FC<{ file: File }> = ({ file }) => {
     }
   }
 
-  const handleBeforeUnload = useCallback(
-    (e: Event) => {
+  // Read through a ref so the listener isn't re-registered on every progress update
+  const peersRef = useRef(peers)
+  peersRef.current = peers
+
+  useEffect(() => {
+    const handleBeforeUnload = (e: Event) => {
       if (
-        peers.some(
+        peersRef.current.some(
           (peer) =>
             peer.connectionStatus === 'connected' &&
             peer.transferStatus !== 'completed',
@@ -100,16 +104,12 @@ const WebrtcClient: React.FC<{ file: File }> = ({ file }) => {
         e.preventDefault()
         return 'Are you sure? Your link will be lost'
       }
-    },
-    [peers],
-  )
-
-  useEffect(() => {
+    }
     window.addEventListener('beforeunload', handleBeforeUnload)
     return () => {
       window.removeEventListener('beforeunload', handleBeforeUnload)
     }
-  }, [handleBeforeUnload])
+  }, [])
 
   const url = new URL(`/download/${roomId}/`, document.baseURI).href
   return (
