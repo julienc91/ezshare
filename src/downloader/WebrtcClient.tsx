@@ -1,13 +1,12 @@
 import React, { useContext, useEffect, useMemo, useRef, useState } from 'react'
 import { faSave, faSpinner } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { trysteroConfig } from '../constants'
 import {
-  arrayBufferToBlob,
-  formatSize,
-  getFileIcon,
-  splitFileExtension,
-} from '../utils'
+  FILE_SLICE_SIZE,
+  PROGRESS_UPDATE_INTERVAL_MS,
+  trysteroConfig,
+} from '../constants'
+import { formatSize, getFileIcon, splitFileExtension, throttle } from '../utils'
 import { joinRoom } from '@trystero-p2p/mqtt'
 import {
   FileInfo,
@@ -24,11 +23,20 @@ const WebrtcClient: React.FC<{ roomId: string }> = ({ roomId }) => {
   const [uploader, setUploader] = useState<Peer | null>(null)
   const [fileInfo, setFileInfo] = useState<FileInfo | null>(null)
   const [blob, setBlob] = useState<Blob | null>(null)
+  const receivedSlices = useRef<ArrayBuffer[]>([])
+  const receivedBytes = useRef(0)
 
   const setupAction = room.makeAction<FileInfoPayload | TransferAcceptPayload>(
     'setup',
   )
   const fileAction = room.makeAction<ArrayBuffer>('file')
+  const reportProgress = useMemo(
+    () =>
+      throttle((progress: number) => {
+        setUploader((uploader) => uploader && { ...uploader, progress })
+      }, PROGRESS_UPDATE_INTERVAL_MS),
+    [],
+  )
 
   room.onPeerLeave = (peerId) => {
     if (peerId === uploaderId) {
@@ -60,14 +68,26 @@ const WebrtcClient: React.FC<{ roomId: string }> = ({ roomId }) => {
       payload &&
       uploader?.transferStatus === 'in_progress'
     ) {
-      setBlob(arrayBufferToBlob(payload, fileInfo.filetype))
-      setUploader({ ...uploader, transferStatus: 'completed', progress: 100 })
+      receivedSlices.current.push(payload)
+      receivedBytes.current += payload.byteLength
+      if (receivedBytes.current >= fileInfo.filesize) {
+        setBlob(new Blob(receivedSlices.current, { type: fileInfo.filetype }))
+        receivedSlices.current = []
+        setUploader({ ...uploader, transferStatus: 'completed', progress: 100 })
+      }
     }
   }
 
   fileAction.onReceiveProgress = (percent, { peerId }) => {
-    if (peerId === uploader?.peerId) {
-      setUploader({ ...uploader, progress: percent * 100 })
+    if (peerId === uploaderId && fileInfo?.filesize) {
+      const sliceSize = Math.min(
+        FILE_SLICE_SIZE,
+        fileInfo.filesize - receivedBytes.current,
+      )
+      reportProgress(
+        ((receivedBytes.current + percent * sliceSize) / fileInfo.filesize) *
+          100,
+      )
     }
   }
 

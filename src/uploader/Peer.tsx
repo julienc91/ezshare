@@ -8,6 +8,8 @@ import {
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { TransferAcceptPayload, FileInfoPayload, Peer } from '../types'
 import { UploaderContext } from './context.ts'
+import { FILE_SLICE_SIZE, PROGRESS_UPDATE_INTERVAL_MS } from '../constants.ts'
+import { throttle } from '../utils.ts'
 
 const PeerItem: React.FC<{
   peer: Peer
@@ -45,14 +47,30 @@ const PeerItem: React.FC<{
       peer.transferStatus === 'not_started'
     ) {
       setTransferStatus(peer.peerId, 'in_progress')
-      const buffer = await file.arrayBuffer()
-      await fileAction.send(buffer, {
-        target: peer.peerId,
-        metadata: fileMetadata,
-        onProgress: (progress) => {
-          setProgress(peer.peerId, progress * 100)
-        },
-      })
+      const reportProgress = throttle((sentBytes: number) => {
+        setProgress(peer.peerId, (sentBytes / (file.size || 1)) * 100)
+      }, PROGRESS_UPDATE_INTERVAL_MS)
+      // The next slice is read from disk while the current one is being sent
+      const sliceCount = Math.max(1, Math.ceil(file.size / FILE_SLICE_SIZE))
+      const readSlice = (i: number) =>
+        file.slice(i * FILE_SLICE_SIZE, (i + 1) * FILE_SLICE_SIZE).arrayBuffer()
+      let nextSlice = readSlice(0)
+      for (let i = 0; i < sliceCount; i++) {
+        const slice = await nextSlice
+        if (!room.getPeers()[peer.peerId]) {
+          return
+        }
+        if (i + 1 < sliceCount) {
+          nextSlice = readSlice(i + 1)
+        }
+        await fileAction.send(slice, {
+          target: peer.peerId,
+          onProgress: (progress) => {
+            reportProgress(i * FILE_SLICE_SIZE + progress * slice.byteLength)
+          },
+        })
+      }
+      setProgress(peer.peerId, 100)
     }
   }
 

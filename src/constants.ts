@@ -29,3 +29,9 @@ export const trysteroConfig = {
   appId: 'ezshare',
   ...(relayUrls.length ? { relayConfig: { urls: relayUrls } } : {}),
 }
+
+// Minimum delay between two progress updates, to avoid re-rendering on every chunk
+export const PROGRESS_UPDATE_INTERVAL_MS = 100
+
+// Files are sent as a sequence of slices of this size, so they never have to fit in memory at once
+export const FILE_SLICE_SIZE = 4 * 1024 ** 2

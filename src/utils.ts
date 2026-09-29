@@ -81,22 +81,17 @@ export const splitFileExtension = (filename: string): [string, string] => {
   return [filename, extension]
 }
 
-const MAX_BLOB_PART_SIZE = 1024 ** 3
-
-export const arrayBufferToBlob = (buffer: ArrayBuffer, type: string): Blob => {
-  const parts: Uint8Array<ArrayBuffer>[] = []
-  for (
-    let offset = 0;
-    offset < buffer.byteLength;
-    offset += MAX_BLOB_PART_SIZE
-  ) {
-    parts.push(
-      new Uint8Array(
-        buffer,
-        offset,
-        Math.min(MAX_BLOB_PART_SIZE, buffer.byteLength - offset),
-      ),
-    )
+// Calls f at most once every intervalMs, dropping the calls in between
+export const throttle = <A extends unknown[]>(
+  f: (...args: A) => void,
+  intervalMs: number,
+): ((...args: A) => void) => {
+  let lastCall = -Infinity
+  return (...args: A) => {
+    const now = performance.now()
+    if (now - lastCall >= intervalMs) {
+      lastCall = now
+      f(...args)
+    }
   }
-  return new Blob(parts, { type })
 }
