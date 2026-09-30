@@ -3,6 +3,7 @@ import { faSave, faSpinner } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {
   FILE_SLICE_SIZE,
+  JOIN_TIMEOUT_MS,
   PROGRESS_UPDATE_INTERVAL_MS,
   trysteroConfig,
 } from '../constants'
@@ -46,7 +47,31 @@ const WebrtcClient: React.FC<{ roomId: string }> = ({ roomId }) => {
     [],
   )
 
+  // Until the uploader approves us, we can't tell it apart from other
+  // downloaders: we only give up on the code while nobody else is in the room
+  const [isAlone, setIsAlone] = useState(true)
+  const [timedOut, setTimedOut] = useState(false)
+
+  // The onPeerJoin setter synchronously replays already connected peers,
+  // so it must not be (re)assigned during render
+  useEffect(() => {
+    room.onPeerJoin = () => setIsAlone(false)
+    return () => {
+      room.onPeerJoin = null
+    }
+  }, [room])
+
+  useEffect(() => {
+    if (!isAlone) {
+      setTimedOut(false)
+      return
+    }
+    const timeout = setTimeout(() => setTimedOut(true), JOIN_TIMEOUT_MS)
+    return () => clearTimeout(timeout)
+  }, [isAlone])
+
   room.onPeerLeave = (peerId) => {
+    setIsAlone(Object.keys(room.getPeers()).length === 0)
     setUploader((uploader) =>
       uploader?.peerId === peerId
         ? { ...uploader, connectionStatus: 'disconnected' }
@@ -116,7 +141,7 @@ const WebrtcClient: React.FC<{ roomId: string }> = ({ roomId }) => {
   }
 
   if (!uploader) {
-    return <NotConnected />
+    return timedOut ? <NoUploader /> : <NotConnected />
   }
 
   if (
@@ -246,6 +271,25 @@ const NotConnected: React.FC = () => {
       <div>
         <p>We're waiting for the uploader to establish the connection.</p>
         <p>If this is taking too long, make sure your link is still valid.</p>
+      </div>
+    </section>
+  )
+}
+
+const NoUploader: React.FC = () => {
+  return (
+    <section>
+      <h1>No file shared</h1>
+      <div>
+        <FontAwesomeIcon className="loading-icon" icon={faSpinner} />
+      </div>
+      <div>
+        <p>Nobody is sharing a file with this code at the moment.</p>
+        <p>
+          Check that the code is correct, and that the uploader's page is still
+          open.
+        </p>
+        <p>We're still listening, in case they join.</p>
       </div>
     </section>
   )
