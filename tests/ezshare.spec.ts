@@ -1,17 +1,15 @@
 import { test, expect, Page, BrowserContext } from '@playwright/test'
-import { APP_URL, startUpload, ROOM_ID_REGEX } from './utils'
+import { APP_URL, startUpload } from './utils'
 import * as fs from 'node:fs'
 import crypto from 'node:crypto'
 
 const setupFlow = async (page: Page, context: BrowserContext) => {
   await startUpload(page)
 
-  const roomId = await page
-    .getByRole('link', { name: ROOM_ID_REGEX, exact: true })
-    .textContent()
+  const downloadUrl = await page.getByLabel('Your download link').inputValue()
 
   const downloaderPage = await context.newPage()
-  await downloaderPage.goto(`${APP_URL}/download/${roomId}/`)
+  await downloaderPage.goto(downloadUrl)
   return [page, downloaderPage]
 }
 
@@ -67,13 +65,13 @@ test('Complete flow', async ({ page, context }) => {
   ).toBeVisible()
   await expect(
     downloaderPage.getByText(
-      'Click the link below to save the file on your computer.',
+      "Your download should start automatically. If it doesn't:",
     ),
   ).toBeVisible()
 
   // Save file
   const blobLink = downloaderPage.getByRole('link', {
-    name: 'image.jpg',
+    name: 'Save image.jpg',
     exact: true,
   })
   await expect(blobLink).toBeVisible()

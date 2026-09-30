@@ -1,5 +1,13 @@
 import React, { useContext, useEffect, useMemo, useRef, useState } from 'react'
-import { faSave, faSpinner } from '@fortawesome/free-solid-svg-icons'
+import {
+  faDownload,
+  faFloppyDisk,
+  faLock,
+  faPlugCircleXmark,
+  faShareNodes,
+  faSpinner,
+  faTriangleExclamation,
+} from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {
   FILE_SLICE_SIZE,
@@ -7,13 +15,8 @@ import {
   PROGRESS_UPDATE_INTERVAL_MS,
   trysteroConfig,
 } from '../constants'
-import {
-  formatSize,
-  getFileIcon,
-  normalizeShareCode,
-  splitFileExtension,
-  throttle,
-} from '../utils'
+import { formatSize, getFileIcon, normalizeShareCode, throttle } from '../utils'
+import Progress from '../Progress.tsx'
 import { joinRoom } from '@trystero-p2p/mqtt'
 import {
   FileInfo,
@@ -165,58 +168,71 @@ const WebrtcClient: React.FC<{ roomId: string }> = ({ roomId }) => {
   )
 }
 
+const DownloadPage: React.FC<{
+  title: string
+  children: React.ReactNode
+}> = ({ title, children }) => (
+  <section>
+    <h1 className="title">{title}</h1>
+    <div className="card download-card">{children}</div>
+    <ul className="reassurance">
+      <li>
+        <FontAwesomeIcon icon={faLock} />
+        End-to-end encrypted
+      </li>
+      <li>
+        <FontAwesomeIcon icon={faShareNodes} />
+        Peer-to-peer, no server storage
+      </li>
+    </ul>
+  </section>
+)
+
 const DownloadInfo: React.FC = () => {
   const { uploader, fileInfo, handleAcceptTransfer } =
     useContext(DownloaderContext)
   if (!fileInfo) {
     return (
-      <section>
-        <h1>Connected</h1>
-        <div>
-          <FontAwesomeIcon className="loading-icon" icon={faSpinner} />
-        </div>
-        <div>
+      <DownloadPage title="Connected">
+        <FontAwesomeIcon className="loading-icon" icon={faSpinner} />
+        <div className="message">
           <p>The connection was established.</p>
-          <p>We're waiting for the uploader to approve your download.</p>
+          <p className="muted">
+            We're waiting for the uploader to approve your download.
+          </p>
         </div>
-      </section>
+      </DownloadPage>
     )
   }
 
-  const [filename, extension] = splitFileExtension(fileInfo.filename || '')
-  const fileIcon = getFileIcon(fileInfo.filetype || '')
-  const progress = uploader.progress
+  const titles = {
+    not_started: 'Ready to download',
+    in_progress: 'Downloading',
+    completed: 'Download complete',
+  }
 
   return (
-    <section>
-      <h1>
-        {uploader.transferStatus === 'not_started' && 'Ready to download'}
-        {uploader.transferStatus === 'in_progress' && 'Downloading'}
-        {uploader.transferStatus === 'completed' && 'Download complete'}
-      </h1>
-      <div>
-        <div className="uploaded-file">
-          <FontAwesomeIcon className="file-icon" icon={fileIcon} />
-          <span className="file-name">{filename}</span>
-          <span className="file-extension">{extension}</span>
-          <span className="file-size">{formatSize(fileInfo.filesize)}</span>
+    <DownloadPage title={titles[uploader.transferStatus ?? 'not_started']}>
+      <div className="downloaded-file">
+        <span className="file-badge">
+          <FontAwesomeIcon icon={getFileIcon(fileInfo.filetype)} />
+        </span>
+        <div className="file-name" title={fileInfo.filename}>
+          {fileInfo.filename}
         </div>
-        {uploader.transferStatus === 'not_started' && (
-          <div>
-            <button className="default-button" onClick={handleAcceptTransfer}>
-              Download
-            </button>
-          </div>
-        )}
-        {uploader.transferStatus === 'in_progress' && (
-          <div className="progress">
-            <div className="progress-inner" style={{ width: `${progress}%` }} />
-            <label>{Math.round(progress * 100) / 100}%</label>
-          </div>
-        )}
-        {uploader.transferStatus === 'completed' && <TransferComplete />}
+        <div className="file-size">{formatSize(fileInfo.filesize)}</div>
       </div>
-    </section>
+      {uploader.transferStatus === 'not_started' && (
+        <button className="button" onClick={handleAcceptTransfer}>
+          <FontAwesomeIcon icon={faDownload} />
+          Download
+        </button>
+      )}
+      {uploader.transferStatus === 'in_progress' && (
+        <Progress progress={uploader.progress} size={fileInfo.filesize} />
+      )}
+      {uploader.transferStatus === 'completed' && <TransferComplete />}
+    </DownloadPage>
   )
 }
 
@@ -243,80 +259,74 @@ const TransferComplete: React.FC = () => {
   }
 
   return (
-    <div>
-      <p>Click the link below to save the file on your computer.</p>
-      <div className="save-link">
-        <FontAwesomeIcon icon={faSave} />
-        <a
-          href={blobUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          download={fileInfo.filename}
-          ref={linkRef}
-        >
-          {fileInfo.filename}
-        </a>
-      </div>
+    <div className="save-link">
+      <p>Your download should start automatically. If it doesn't:</p>
+      <a
+        className="button"
+        href={blobUrl}
+        target="_blank"
+        rel="noopener noreferrer"
+        download={fileInfo.filename}
+        ref={linkRef}
+      >
+        <FontAwesomeIcon icon={faFloppyDisk} />
+        <span>Save {fileInfo.filename}</span>
+      </a>
     </div>
   )
 }
 
 const NotConnected: React.FC = () => {
   return (
-    <section>
-      <h1>Waiting for connection</h1>
-      <div>
-        <FontAwesomeIcon className="loading-icon" icon={faSpinner} />
-      </div>
-      <div>
+    <DownloadPage title="Waiting for connection">
+      <FontAwesomeIcon className="loading-icon" icon={faSpinner} />
+      <div className="message">
         <p>We're waiting for the uploader to establish the connection.</p>
-        <p>If this is taking too long, make sure your link is still valid.</p>
+        <p className="muted">
+          If this is taking too long, make sure your link is still valid.
+        </p>
       </div>
-    </section>
+    </DownloadPage>
   )
 }
 
 const NoUploader: React.FC = () => {
   return (
-    <section>
-      <h1>No file shared</h1>
-      <div>
-        <FontAwesomeIcon className="loading-icon" icon={faSpinner} />
-      </div>
-      <div>
+    <DownloadPage title="No file shared">
+      <FontAwesomeIcon className="loading-icon" icon={faSpinner} />
+      <div className="message">
         <p>Nobody is sharing a file with this code at the moment.</p>
-        <p>
+        <p className="muted">
           Check that the code is correct, and that the uploader's page is still
-          open.
+          open. We're still listening, in case they join.
         </p>
-        <p>We're still listening, in case they join.</p>
       </div>
-    </section>
+    </DownloadPage>
   )
 }
 
 const Disconnected: React.FC = () => {
   return (
-    <section>
-      <h1>Disconnected</h1>
-      <div>
+    <DownloadPage title="Disconnected">
+      <FontAwesomeIcon className="status-icon" icon={faPlugCircleXmark} />
+      <div className="message">
         <p>The uploader aborted the transfer.</p>
       </div>
-    </section>
+    </DownloadPage>
   )
 }
 
 const Conflict: React.FC = () => {
   return (
-    <section>
-      <h1>Transfer aborted</h1>
-      <div>
+    <DownloadPage title="Transfer aborted">
+      <FontAwesomeIcon className="status-icon" icon={faTriangleExclamation} />
+      <div className="message">
         <p>Several peers claimed to be sharing a file with this code.</p>
-        <p>
+        <p className="muted">
           To be safe, ask the uploader to share the file again with a new link.
         </p>
       </div>
-    </section>
+    </DownloadPage>
   )
 }
 

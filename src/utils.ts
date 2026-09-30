@@ -71,16 +71,6 @@ export const getFileIcon = (mime: string): IconDefinition => {
   return icon
 }
 
-export const splitFileExtension = (filename: string): [string, string] => {
-  filename = filename || ''
-  let extension = ''
-  if (filename.includes('.')) {
-    extension = /(?:\.([^.]+))?$/.exec(filename)?.[0] || ''
-    filename = filename.slice(0, -extension.length)
-  }
-  return [filename, extension]
-}
-
 // Calls f at most once every intervalMs, dropping the calls in between
 export const throttle = <A extends unknown[]>(
   f: (...args: A) => void,

@@ -1,15 +1,16 @@
 import React, { useContext, useMemo } from 'react'
 import {
+  faCheck,
   faSpinner,
   faUser,
-  faUserCheck,
-  faUserSlash,
+  faXmark,
 } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { TransferAcceptPayload, FileInfoPayload, Peer } from '../types'
 import { UploaderContext } from './context.ts'
 import { FILE_SLICE_SIZE, PROGRESS_UPDATE_INTERVAL_MS } from '../constants.ts'
 import { throttle } from '../utils.ts'
+import Progress from '../Progress.tsx'
 
 const PeerItem: React.FC<{
   peer: Peer
@@ -74,54 +75,64 @@ const PeerItem: React.FC<{
     }
   }
 
-  let inner
+  let label, status
   if (peer.transferStatus === 'completed') {
-    inner = (
-      <>
-        <FontAwesomeIcon className="user-icon" icon={faUserCheck} />
-        <div>Completed</div>
-      </>
+    label = 'Transfer finished'
+    status = (
+      <div className="peer-status done">
+        <span className="status-badge">
+          <FontAwesomeIcon icon={faCheck} />
+        </span>
+        Completed
+      </div>
     )
   } else if (peer.connectionStatus === 'disconnected') {
-    inner = (
-      <>
-        <FontAwesomeIcon className="user-icon" icon={faUserSlash} />
-        <div>Disconnected</div>
-      </>
+    label = 'Left the page'
+    status = (
+      <div className="peer-status gone">
+        <FontAwesomeIcon icon={faXmark} />
+        Disconnected
+      </div>
     )
   } else if (peer.transferStatus === null) {
-    inner = (
-      <>
-        <FontAwesomeIcon className="user-icon" icon={faUser} />
-        <button onClick={handleStartTransfer}>Start</button>
-      </>
+    label = 'Connected'
+    status = (
+      <button className="button" onClick={handleStartTransfer}>
+        Start
+      </button>
     )
   } else if (peer.transferStatus === 'not_started') {
-    inner = (
-      <>
-        <FontAwesomeIcon className="user-icon" icon={faUser} />
-        <div>
-          <div>Waiting for peer</div>
-          <FontAwesomeIcon className="loading-icon" icon={faSpinner} />
-        </div>
-      </>
+    label = 'Download requested'
+    status = (
+      <div className="peer-status">
+        <FontAwesomeIcon className="loading-icon" icon={faSpinner} />
+        Waiting for peer
+      </div>
     )
-  } else if (peer.transferStatus === 'in_progress') {
-    inner = (
-      <>
-        <FontAwesomeIcon className="user-icon" icon={faUser} />
-        <div className="progress">
-          <div
-            className="progress-inner"
-            style={{ width: `${peer.progress}%` }}
-          />
-          <label>{Math.round(peer.progress * 100) / 100}%</label>
-        </div>
-      </>
-    )
+  } else {
+    label = 'Receiving the file'
+    status = <Progress progress={peer.progress} size={file.size} />
   }
 
-  return <div className="peer">{inner}</div>
+  return (
+    <div
+      className={
+        'card raised peer' +
+        (peer.connectionStatus === 'disconnected' &&
+        peer.transferStatus !== 'completed'
+          ? ' disconnected'
+          : '')
+      }
+    >
+      <div className="peer-identity">
+        <span className="peer-avatar">
+          <FontAwesomeIcon icon={faUser} />
+        </span>
+        <div className="peer-label">{label}</div>
+      </div>
+      {status}
+    </div>
+  )
 }
 
 export default PeerItem

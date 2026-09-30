@@ -115,12 +115,12 @@ const WebrtcClient: React.FC<{ file: File }> = ({ file }) => {
     }
   }, [])
 
-  const url = new URL(`/download/${roomId}/`, document.baseURI).href
+  const url = new URL(`/d/${roomId}/`, document.baseURI).href
   return (
     <UploaderContext.Provider
       value={{ file, room, peers, setTransferStatus, setProgress }}
     >
-      <DownloadLink id={roomId} url={url} />
+      <DownloadLink url={url} />
       <PeerList />
     </UploaderContext.Provider>
   )

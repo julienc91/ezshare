@@ -5,6 +5,12 @@ export const APP_URL = process.env.APP_URL ?? 'http://localhost:3000'
 export const ROOM_ID_REGEX =
   /^[0-9A-HJKMNP-TV-Z]{4}(-[0-9A-HJKMNP-TV-Z]{4}){3}$/
 
+// Reads the share code from the download link the uploader displays
+export const getRoomId = async (page: Page): Promise<string> => {
+  const url = await page.getByLabel('Your download link').inputValue()
+  return url.match(/\/d\/([^/]+)\/$/)![1]
+}
+
 export const uploadFile = async (page: Page, params?: { roomId: string }) => {
   let url = `${APP_URL}/`
   if (params?.roomId) {

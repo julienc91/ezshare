@@ -1,5 +1,11 @@
 import { test, expect } from '@playwright/test'
-import { APP_URL, startUpload, uploadFile, ROOM_ID_REGEX } from './utils'
+import {
+  APP_URL,
+  getRoomId,
+  startUpload,
+  uploadFile,
+  ROOM_ID_REGEX,
+} from './utils'
 
 test('Render homepage', async ({ page }) => {
   await page.goto(`${APP_URL}/`)
@@ -64,20 +70,9 @@ test('Download link', async ({ page, context }) => {
 
   await copyButton.click()
 
-  const downloadLink = page.getByRole('link', {
-    name: ROOM_ID_REGEX,
-    exact: true,
-  })
-  await expect(downloadLink).toBeVisible()
-  const downloadRoomId = await downloadLink.textContent()
-  // @ts-ignore
-  const downloadUrl = await downloadLink.evaluate((e) => e.href)
-
-  const urlRegex = new RegExp(
-    String.raw`^${APP_URL}/download/${downloadRoomId}/$`,
-    'g',
-  )
-  expect(downloadUrl).toMatch(urlRegex)
+  const downloadUrl = await page.getByLabel('Your download link').inputValue()
+  expect(await getRoomId(page)).toMatch(ROOM_ID_REGEX)
+  expect(downloadUrl).toEqual(`${APP_URL}/d/${await getRoomId(page)}/`)
   expect(await getClipboardContent()).toEqual(downloadUrl)
 })
 

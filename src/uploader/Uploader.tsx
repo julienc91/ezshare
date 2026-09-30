@@ -8,9 +8,9 @@ import {
   faTrash,
 } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import FileCard from '../FileCard'
 import FileUploader from './FileUploader'
 import WebrtcClient from './WebrtcClient'
-import { formatSize, getFileIcon, splitFileExtension } from '../utils'
 
 const Uploader: React.FC = () => {
   const [file, setFile] = useState<File | null>(null)
@@ -25,81 +25,136 @@ const Uploader: React.FC = () => {
     setStart(true)
   }, [setStart])
 
-  const [filename, extension] = splitFileExtension(file?.name || '')
-  const fileIcon = getFileIcon(file?.type || '')
+  if (!file) {
+    return (
+      <>
+        <section>
+          <h1 className="title">Share a file</h1>
+          <p className="lead">
+            Send a file straight from your browser to someone else's. Nothing is
+            uploaded to a server.
+          </p>
+          <FileUploader onFileSelected={setFile} />
+          <HowItWorks />
+        </section>
+        <hr className="separator" />
+        <KeyPoints />
+      </>
+    )
+  }
 
   return (
-    <>
-      <section>
-        <h1>Share a file</h1>
-
-        {!file && <FileUploader onFileSelected={setFile} />}
-        {file && (
-          <div>
-            <div className="uploaded-file">
-              <FontAwesomeIcon className="file-icon" icon={fileIcon} />
-              <span className="file-name">{filename}</span>
-              <span className="file-extension">{extension}</span>
-              <span className="file-size">{formatSize(file.size)}</span>
-              <button
-                className={'icon-only' + (start ? ' hidden' : '')}
-                title="Remove file"
-                onClick={handleReset}
-              >
-                <FontAwesomeIcon icon={faTrash} />
-              </button>
-            </div>
-            <div>
-              {!start && (
-                <button
-                  className="default-button"
-                  onClick={handleStartWebrtcClient}
-                >
-                  Start sharing
-                </button>
-              )}
-            </div>
-          </div>
+    <section>
+      <h1 className="title">Share a file</h1>
+      <FileCard file={file}>
+        {start ? (
+          <span className="live-pill">Live · keep this tab open</span>
+        ) : (
+          <button
+            className="icon-button"
+            title="Remove file"
+            aria-label="Remove file"
+            onClick={handleReset}
+          >
+            <FontAwesomeIcon icon={faTrash} />
+          </button>
         )}
-        {start && file && <WebrtcClient file={file} />}
-      </section>
-
-      <hr />
-      <KeyPoints />
-    </>
+      </FileCard>
+      {start ? (
+        <WebrtcClient file={file} />
+      ) : (
+        <button
+          className="button start-sharing"
+          onClick={handleStartWebrtcClient}
+        >
+          Start sharing
+        </button>
+      )}
+    </section>
   )
 }
 
 export default Uploader
 
+const HowItWorks: React.FC = () => (
+  <ol className="how-it-works">
+    <li>
+      <span className="step-number">1</span>
+      <div>
+        <h3>Pick a file</h3>
+        <p>
+          <span className="pointer-only">
+            Drop it above or browse your disk.
+          </span>
+          <span className="touch-only">From your phone's files or photos.</span>
+        </p>
+      </div>
+    </li>
+    <li>
+      <span className="step-number">2</span>
+      <div>
+        <h3>Share the link</h3>
+        <p>Send it, or let them scan the QR code.</p>
+      </div>
+    </li>
+    <li>
+      <span className="step-number">3</span>
+      <div>
+        <h3>They download it</h3>
+        <p>The file goes directly from your browser to theirs.</p>
+      </div>
+    </li>
+  </ol>
+)
+
 const KeyPoints: React.FC = () => (
   <section>
-    <h1>Our vision</h1>
-    <ul className="steps">
+    <h2 className="title small">Our vision</h2>
+    <ul className="vision">
       <li>
-        <FontAwesomeIcon icon={faLock} />
-        <h3>Encryption</h3>
-        <p>End-to-end encryption between you and your peers</p>
+        <span className="vision-icon">
+          <FontAwesomeIcon icon={faLock} />
+        </span>
+        <div>
+          <h3>Encryption</h3>
+          <p>End-to-end encryption between you and your peers</p>
+        </div>
       </li>
       <li>
-        <FontAwesomeIcon icon={faMask} />
-        <h3>Privacy</h3>
-        <p>No tracking, no middle-man. Your data is yours and yours only</p>
+        <span className="vision-icon">
+          <FontAwesomeIcon icon={faMask} />
+        </span>
+        <div>
+          <h3>Privacy</h3>
+          <p>No tracking, no middle-man. Your data is yours and yours only</p>
+        </div>
       </li>
       <li>
-        <FontAwesomeIcon icon={faBolt} />
-        <h3>Speed</h3>
-        <p>No speed limit other than the one of your own connection</p>
+        <span className="vision-icon">
+          <FontAwesomeIcon icon={faBolt} />
+        </span>
+        <div>
+          <h3>Speed</h3>
+          <p>No speed limit other than the one of your own connection</p>
+        </div>
       </li>
       <li>
-        <FontAwesomeIcon icon={faGlobe} />
-        <h3>Free</h3>
-        <p>No restriction whatsoever, and totally free</p>
+        <span className="vision-icon">
+          <FontAwesomeIcon icon={faGlobe} />
+        </span>
+        <div>
+          <h3>Free</h3>
+          <p>No restriction whatsoever, and totally free</p>
+        </div>
       </li>
       <li>
-        <FontAwesomeIcon icon={faCodeBranch} />
-        <h3>Open Source</h3>
-        <p>Contributions are welcome to help us grow and improve our service</p>
+        <span className="vision-icon">
+          <FontAwesomeIcon icon={faCodeBranch} />
+        </span>
+        <div>
+          <h3>Open Source</h3>
+          <p>Contributions are welcome to help us grow and improve</p>
+        </div>
       </li>
     </ul>
   </section>
