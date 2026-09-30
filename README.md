@@ -6,7 +6,7 @@ Demo on: https://ezshare.julienc.io/
 
 ## Preview
 
-![Upload](https://raw.githubusercontent.com/julienc91/ezshare/master/doc/upload_step1.png)
+![Upload](doc/upload_step1.png)
 
 ## Quick Start
 
