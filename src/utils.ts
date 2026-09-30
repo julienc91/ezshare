@@ -95,3 +95,26 @@ export const throttle = <A extends unknown[]>(
     }
   }
 }
+
+// Crockford's base32 alphabet: no I, L, O or U, which are easily confused when typed by hand
+const SHARE_CODE_ALPHABET = '0123456789ABCDEFGHJKMNPQRSTVWXYZ'
+// 16 characters of 5 bits each: 80 bits, too many to brute force from the relay's topic hashes
+const SHARE_CODE_LENGTH = 16
+
+export const generateShareCode = (): string => {
+  const bytes = crypto.getRandomValues(new Uint8Array(SHARE_CODE_LENGTH))
+  // 256 is a multiple of 32, so the modulo doesn't bias the distribution
+  const code = Array.from(
+    bytes,
+    (byte) => SHARE_CODE_ALPHABET[byte % SHARE_CODE_ALPHABET.length],
+  ).join('')
+  return code.match(/.{4}/g)!.join('-')
+}
+
+// Maps the ways a share code can be typed by hand to a single room id
+export const normalizeShareCode = (code: string): string =>
+  code
+    .toUpperCase()
+    .replace(/[\s-]/g, '')
+    .replace(/O/g, '0')
+    .replace(/[IL]/g, '1')

@@ -2,8 +2,9 @@ import React, { useEffect, useMemo, useRef, useState } from 'react'
 import DownloadLink from './DownloadLink'
 import PeerList from './PeerList'
 import { trysteroConfig } from '../constants'
-import { joinRoom, selfId } from '@trystero-p2p/mqtt'
+import { joinRoom } from '@trystero-p2p/mqtt'
 import { Peer } from '../types.ts'
+import { generateShareCode, normalizeShareCode } from '../utils.ts'
 import { UploaderContext } from './context.ts'
 
 const getRoomId = () => {
@@ -14,12 +15,15 @@ const getRoomId = () => {
       return forcedRoomId
     }
   }
-  return `${selfId.slice(0, 4)}-${selfId.slice(4, 8)}-${selfId.slice(8, 16)}-${selfId.slice(16)}`
+  return generateShareCode()
 }
 
 const WebrtcClient: React.FC<{ file: File }> = ({ file }) => {
   const roomId = useMemo(() => getRoomId(), [])
-  const room = useMemo(() => joinRoom(trysteroConfig, roomId), [roomId])
+  const room = useMemo(
+    () => joinRoom(trysteroConfig, normalizeShareCode(roomId)),
+    [roomId],
+  )
   const [peers, setPeers] = useState<Peer[]>([])
 
   const getPeerFromId = (peerId: string): Peer | undefined => {

@@ -6,7 +6,13 @@ import {
   PROGRESS_UPDATE_INTERVAL_MS,
   trysteroConfig,
 } from '../constants'
-import { formatSize, getFileIcon, splitFileExtension, throttle } from '../utils'
+import {
+  formatSize,
+  getFileIcon,
+  normalizeShareCode,
+  splitFileExtension,
+  throttle,
+} from '../utils'
 import { joinRoom } from '@trystero-p2p/mqtt'
 import {
   FileInfo,
@@ -17,8 +23,10 @@ import {
 import { DownloaderContext } from './context.ts'
 
 const WebrtcClient: React.FC<{ roomId: string }> = ({ roomId }) => {
-  const uploaderId = roomId.replace(/-/g, '')
-  const room = useMemo(() => joinRoom(trysteroConfig, roomId), [roomId])
+  const room = useMemo(
+    () => joinRoom(trysteroConfig, normalizeShareCode(roomId)),
+    [roomId],
+  )
 
   const [uploader, setUploader] = useState<Peer | null>(null)
   const [fileInfo, setFileInfo] = useState<FileInfo | null>(null)
@@ -39,21 +47,33 @@ const WebrtcClient: React.FC<{ roomId: string }> = ({ roomId }) => {
   )
 
   room.onPeerLeave = (peerId) => {
-    if (peerId === uploaderId) {
-      setUploader({
-        peerId: uploaderId,
-        connectionStatus: 'disconnected',
-        transferStatus: uploader?.transferStatus ?? null,
-        progress: uploader?.progress ?? 0,
-      })
-    }
+    setUploader((uploader) =>
+      uploader?.peerId === peerId
+        ? { ...uploader, connectionStatus: 'disconnected' }
+        : uploader,
+    )
   }
 
+  // The share code doesn't identify the uploader: it is the first peer
+  // to send the file metadata, which it only does once it approved us.
+  // Anyone else who knows the code could do the same, so if a second
+  // peer sends metadata we can't tell which one is genuine and give up.
+  // Kept in a ref so that messages handled before the next render see it.
+  const uploaderPeerId = useRef<string | null>(null)
+  const [conflict, setConflict] = useState(false)
+
   setupAction.onMessage = (data, { peerId }) => {
-    if (peerId === uploaderId && data.type === 'metadata') {
+    if (data.type !== 'metadata') {
+      return
+    }
+    uploaderPeerId.current ??= peerId
+    if (peerId !== uploaderPeerId.current) {
+      setConflict(true)
+      room.leave().catch(() => {})
+    } else {
       setFileInfo(data)
       setUploader({
-        peerId: uploaderId,
+        peerId,
         connectionStatus: 'connected',
         transferStatus: 'not_started',
         progress: 0,
@@ -63,7 +83,7 @@ const WebrtcClient: React.FC<{ roomId: string }> = ({ roomId }) => {
 
   fileAction.onMessage = (payload, { peerId }) => {
     if (
-      peerId === uploaderId &&
+      peerId === uploader?.peerId &&
       fileInfo &&
       payload &&
       uploader?.transferStatus === 'in_progress'
@@ -79,7 +99,7 @@ const WebrtcClient: React.FC<{ roomId: string }> = ({ roomId }) => {
   }
 
   fileAction.onReceiveProgress = (percent, { peerId }) => {
-    if (peerId === uploaderId && fileInfo?.filesize) {
+    if (peerId === uploader?.peerId && fileInfo?.filesize) {
       const sliceSize = Math.min(
         FILE_SLICE_SIZE,
         fileInfo.filesize - receivedBytes.current,
@@ -89,6 +109,10 @@ const WebrtcClient: React.FC<{ roomId: string }> = ({ roomId }) => {
           100,
       )
     }
+  }
+
+  if (conflict) {
+    return <Conflict />
   }
 
   if (!uploader) {
@@ -233,6 +257,20 @@ const Disconnected: React.FC = () => {
       <h1>Disconnected</h1>
       <div>
         <p>The uploader aborted the transfer.</p>
+      </div>
+    </section>
+  )
+}
+
+const Conflict: React.FC = () => {
+  return (
+    <section>
+      <h1>Transfer aborted</h1>
+      <div>
+        <p>Several peers claimed to be sharing a file with this code.</p>
+        <p>
+          To be safe, ask the uploader to share the file again with a new link.
+        </p>
       </div>
     </section>
   )

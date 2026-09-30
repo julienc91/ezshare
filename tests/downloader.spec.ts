@@ -1,8 +1,10 @@
 import { test, expect } from '@playwright/test'
+import crypto from 'node:crypto'
 import { APP_URL } from './utils'
 
 test('Download page with no uploader', async ({ page }) => {
-  await page.goto(`${APP_URL}/download/0000-0000-00000000-0000/`)
+  const roomId = crypto.randomBytes(8).toString('hex').toUpperCase()
+  await page.goto(`${APP_URL}/download/${roomId}/`)
   await expect(
     page.getByRole('heading', { name: 'Waiting for connection', exact: true }),
   ).toBeVisible()

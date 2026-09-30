@@ -95,6 +95,61 @@ test('Complete flow', async ({ page, context }) => {
   )
 })
 
+test('Room code typed by hand', async ({ page, context }) => {
+  // Starts with 0 and 1 so that their look-alike letters are always tested
+  const roomId = `011${crypto.randomBytes(7).toString('hex').toUpperCase().slice(1)}`
+  await startUpload(page, { roomId })
+
+  // Lowercase, with misplaced dashes, and with look-alike letters instead of digits
+  const typedCode = `o-Li${roomId.slice(3, 9).toLowerCase()}-${roomId.slice(9)}`
+  const downloaderPage = await context.newPage()
+  await downloaderPage.goto(`${APP_URL}/download/${typedCode}/`)
+
+  await page.getByRole('button', { name: 'Start', exact: true }).click()
+  await expect(
+    downloaderPage.getByRole('heading', {
+      name: 'Ready to download',
+      exact: true,
+    }),
+  ).toBeVisible()
+  await expect(downloaderPage.getByText('image.jpg')).toBeVisible()
+})
+
+test('Several peers claim to be the uploader', async ({ page, context }) => {
+  // Two uploaders are forced into the same room, as someone who learned
+  // the code could do, and both approve the downloader
+  const roomId = crypto.randomBytes(8).toString('hex').toUpperCase()
+  await startUpload(page, { roomId })
+  const downloaderPage = await context.newPage()
+  await downloaderPage.goto(`${APP_URL}/download/${roomId}/`)
+
+  await page.getByRole('button', { name: 'Start', exact: true }).click()
+  await expect(
+    downloaderPage.getByRole('heading', {
+      name: 'Ready to download',
+      exact: true,
+    }),
+  ).toBeVisible()
+
+  // The second uploader also sees the first one, which ignores its metadata
+  const otherUploaderPage = await context.newPage()
+  await startUpload(otherUploaderPage, { roomId })
+  const startButtons = otherUploaderPage.getByRole('button', {
+    name: 'Start',
+    exact: true,
+  })
+  await expect(startButtons).toHaveCount(2)
+  await startButtons.first().click()
+  await startButtons.first().click()
+
+  await expect(
+    downloaderPage.getByRole('heading', {
+      name: 'Transfer aborted',
+      exact: true,
+    }),
+  ).toBeVisible()
+})
+
 test('Downloader disconnects', async ({ page, context }) => {
   const [uploaderPage, downloaderPage] = await setupFlow(page, context)
 
