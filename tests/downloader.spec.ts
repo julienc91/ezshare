@@ -15,6 +15,15 @@ test('Download page with no uploader', async ({ page }) => {
   ).toBeVisible()
 })
 
+test('Short link redirects to the download page', async ({ page }) => {
+  const roomId = crypto.randomBytes(8).toString('hex').toUpperCase()
+  await page.goto(`${APP_URL}/d/${roomId}/`)
+  await expect(page).toHaveURL(`${APP_URL}/download/${roomId}/`)
+  await expect(
+    page.getByRole('heading', { name: 'Waiting for connection', exact: true }),
+  ).toBeVisible()
+})
+
 test('Download page times out with no uploader', async ({ page }) => {
   await page.clock.install()
   const roomId = crypto.randomBytes(8).toString('hex').toUpperCase()

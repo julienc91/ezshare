@@ -36,11 +36,12 @@ const DarkModeSwitcher: React.FC = () => {
   const icon = theme === 'light' ? faSun : faMoon
   return (
     <button
-      className="theme-selector"
+      className="icon-button"
       title="Change theme"
+      aria-label="Change theme"
       onClick={handleClick}
     >
-      <FontAwesomeIcon icon={icon} />
+      <FontAwesomeIcon icon={icon} aria-hidden />
     </button>
   )
 }
