@@ -14,16 +14,13 @@ COPY . .
 
 RUN npm run build
 
-FROM node:25-slim AS runtime
+FROM ghcr.io/static-web-server/static-web-server:2.44.0 AS runtime
 
-RUN useradd --user-group --create-home --shell /bin/false appuser \
-    && mkdir -p /app/dist \
-    && chown -R appuser:appuser /app
+COPY --from=builder /app/dist /public
 
-WORKDIR /app
+ENV SERVER_PORT=3000 \
+    SERVER_ROOT=/public \
+    SERVER_FALLBACK_PAGE=/public/index.html
 
-COPY --from=builder /app/dist ./dist
-USER appuser
+USER 65534:65534
 EXPOSE 3000
-
-CMD ["npx", "serve", "-s", "dist/"]
