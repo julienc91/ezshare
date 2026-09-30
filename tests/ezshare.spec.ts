@@ -93,6 +93,37 @@ test('Complete flow', async ({ page, context }) => {
   )
 })
 
+test('Several downloaders', async ({ page, context }) => {
+  const [uploaderPage, firstDownloaderPage] = await setupFlow(page, context)
+  const startButtons = uploaderPage.getByRole('button', {
+    name: 'Start',
+    exact: true,
+  })
+  await expect(startButtons).toHaveCount(1)
+  const secondDownloaderPage = await context.newPage()
+  await secondDownloaderPage.goto(firstDownloaderPage.url())
+  await expect(startButtons).toHaveCount(2)
+
+  await startButtons.first().click()
+  await startButtons.first().click()
+
+  // Each downloader must get the file, not only the last peer to have joined
+  for (const downloaderPage of [firstDownloaderPage, secondDownloaderPage]) {
+    await downloaderPage
+      .getByRole('button', { name: 'Download', exact: true })
+      .click()
+    await expect(
+      downloaderPage.getByRole('heading', {
+        name: 'Download complete',
+        exact: true,
+      }),
+    ).toBeVisible()
+  }
+  await expect(
+    uploaderPage.getByText('Completed', { exact: true }),
+  ).toHaveCount(2)
+})
+
 test('Room code typed by hand', async ({ page, context }) => {
   // Starts with 0 and 1 so that their look-alike letters are always tested
   const roomId = `011${crypto.randomBytes(7).toString('hex').toUpperCase().slice(1)}`

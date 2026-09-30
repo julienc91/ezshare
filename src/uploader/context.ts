@@ -10,5 +10,4 @@ export const UploaderContext = createContext<{
     peerId: string,
     transferStatus: 'not_started' | 'in_progress',
   ) => void
-  setProgress: (peerId: string, progress: number) => void
 }>(null!)
