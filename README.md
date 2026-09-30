@@ -15,10 +15,10 @@ Demo on: https://ezshare.julienc.io/
 Using Docker:
 
 ```
-$ docker run ghcr.io/julienc91/ezshare
+$ docker run -p 3000:3000 ghcr.io/julienc91/ezshare
 ```
 
-This will start two services, the web application on port 3000, and the PeerJS server on port 9000.
+This will serve the web application on port 3000.
 
 ### Without Docker
 
