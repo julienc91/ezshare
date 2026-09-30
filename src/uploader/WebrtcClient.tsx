@@ -1,10 +1,14 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import DownloadLink from './DownloadLink'
 import PeerList from './PeerList'
-import { trysteroConfig } from '../constants'
+import {
+  FILE_SLICE_SIZE,
+  PROGRESS_UPDATE_INTERVAL_MS,
+  trysteroConfig,
+} from '../constants'
 import { joinRoom } from '@trystero-p2p/mqtt'
-import { Peer } from '../types.ts'
-import { generateShareCode, normalizeShareCode } from '../utils.ts'
+import { FileInfoPayload, Peer, TransferAcceptPayload } from '../types.ts'
+import { generateShareCode, normalizeShareCode, throttle } from '../utils.ts'
 import { UploaderContext } from './context.ts'
 
 const getRoomId = () => {
@@ -92,6 +96,47 @@ const WebrtcClient: React.FC<{ file: File }> = ({ file }) => {
     }
   }
 
+  // Actions are shared by the whole room, so a single handler must serve
+  // every peer: one registered per peer would replace the others'
+  const setupAction = room.makeAction<FileInfoPayload | TransferAcceptPayload>(
+    'setup',
+  )
+  const fileAction = room.makeAction<ArrayBuffer>('file')
+
+  setupAction.onMessage = async (payload, { peerId }) => {
+    if (
+      payload.type !== 'accept' ||
+      getPeerFromId(peerId)?.transferStatus !== 'not_started'
+    ) {
+      return
+    }
+    setTransferStatus(peerId, 'in_progress')
+    const reportProgress = throttle((sentBytes: number) => {
+      setProgress(peerId, (sentBytes / (file.size || 1)) * 100)
+    }, PROGRESS_UPDATE_INTERVAL_MS)
+    // The next slice is read from disk while the current one is being sent
+    const sliceCount = Math.max(1, Math.ceil(file.size / FILE_SLICE_SIZE))
+    const readSlice = (i: number) =>
+      file.slice(i * FILE_SLICE_SIZE, (i + 1) * FILE_SLICE_SIZE).arrayBuffer()
+    let nextSlice = readSlice(0)
+    for (let i = 0; i < sliceCount; i++) {
+      const slice = await nextSlice
+      if (!room.getPeers()[peerId]) {
+        return
+      }
+      if (i + 1 < sliceCount) {
+        nextSlice = readSlice(i + 1)
+      }
+      await fileAction.send(slice, {
+        target: peerId,
+        onProgress: (progress) => {
+          reportProgress(i * FILE_SLICE_SIZE + progress * slice.byteLength)
+        },
+      })
+    }
+    setProgress(peerId, 100)
+  }
+
   // Read through a ref so the listener isn't re-registered on every progress update
   const peersRef = useRef(peers)
   peersRef.current = peers
@@ -117,9 +162,7 @@ const WebrtcClient: React.FC<{ file: File }> = ({ file }) => {
 
   const url = new URL(`/d/${roomId}/`, document.baseURI).href
   return (
-    <UploaderContext.Provider
-      value={{ file, room, peers, setTransferStatus, setProgress }}
-    >
+    <UploaderContext.Provider value={{ file, room, peers, setTransferStatus }}>
       <DownloadLink url={url} />
       <PeerList />
     </UploaderContext.Provider>
