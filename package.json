@@ -26,9 +26,9 @@
     "@types/react-dom": "^19.3.0",
     "@vitejs/plugin-react": "^6.1.2",
     "prettier": "^3.9.10",
-    "sass": "^1.105.2",
+    "sass": "^1.106.1",
     "typescript": "^7.0.2",
-    "vite": "^8.3.4"
+    "vite": "^8.3.5"
   },
   "scripts": {
     "start": "vite",
