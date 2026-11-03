@@ -12,8 +12,8 @@ jobs:
     runs-on: ubuntu-latest
     if: github.event.pull_request.user.login == 'dependabot[bot]'
     permissions:
-      contents: write # to rebase-merge the PR
-      pull-requests: write # to read/merge the PR via `gh pr merge`
+      contents: read
+      pull-requests: read # to read the PR metadata
     steps:
       - name: Fetch Dependabot metadata
         id: metadata
@@ -25,4 +25,6 @@ jobs:
         run: gh pr merge --auto --rebase "$PR_URL"
         env:
           PR_URL: ${{ github.event.pull_request.html_url }}
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Merges made with GITHUB_TOKEN don't trigger `push` workflows, so the
+          # release and tests workflows would not run on main.
+          GH_TOKEN: ${{ secrets.AUTOMERGE_PAT }}
