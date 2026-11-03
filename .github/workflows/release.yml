@@ -3,6 +3,7 @@ name: Build and Push Docker Image
 permissions: {}
 
 on:
+  workflow_dispatch:
   push:
     branches:
       - main
