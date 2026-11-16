@@ -14,7 +14,7 @@ COPY . .
 
 RUN npm run build
 
-FROM ghcr.io/static-web-server/static-web-server:2.44.1 AS runtime
+FROM ghcr.io/static-web-server/static-web-server:2.44.3 AS runtime
 
 COPY --from=builder /app/dist /public
 
