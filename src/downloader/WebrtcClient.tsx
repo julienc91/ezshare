@@ -1,4 +1,11 @@
-import React, { useContext, useEffect, useMemo, useRef, useState } from 'react'
+import React, {
+  useContext,
+  useEffect,
+  useEffectEvent,
+  useMemo,
+  useRef,
+  useState,
+} from 'react'
 import {
   faDownload,
   faFloppyDisk,
@@ -13,11 +20,15 @@ import {
   FILE_SLICE_SIZE,
   JOIN_TIMEOUT_MS,
   PROGRESS_UPDATE_INTERVAL_MS,
-  trysteroConfig,
 } from '../constants'
 import { formatSize, getFileIcon, normalizeShareCode, throttle } from '../utils'
 import Progress from '../Progress.tsx'
-import { joinRoom } from '@trystero-p2p/mqtt'
+import type {
+  ActionProgressContext,
+  MessageContext,
+  PeerLeaveContext,
+  Room,
+} from '@trystero-p2p/mqtt'
 import {
   FileInfo,
   TransferAcceptPayload,
@@ -25,23 +36,25 @@ import {
   Peer,
 } from '../types.ts'
 import { DownloaderContext } from './context.ts'
+import { useRoom } from '../hooks.ts'
 
 const WebrtcClient: React.FC<{ roomId: string }> = ({ roomId }) => {
-  const room = useMemo(
-    () => joinRoom(trysteroConfig, normalizeShareCode(roomId)),
-    [roomId],
-  )
+  const room = useRoom(normalizeShareCode(roomId))
+  return room ? <RoomClient key={roomId} room={room} /> : <NotConnected />
+}
 
+const RoomClient: React.FC<{ room: Room }> = ({ room }) => {
   const [uploader, setUploader] = useState<Peer | null>(null)
   const [fileInfo, setFileInfo] = useState<FileInfo | null>(null)
   const [blob, setBlob] = useState<Blob | null>(null)
   const receivedSlices = useRef<ArrayBuffer[]>([])
   const receivedBytes = useRef(0)
 
-  const setupAction = room.makeAction<FileInfoPayload | TransferAcceptPayload>(
-    'setup',
+  const setupAction = useMemo(
+    () => room.makeAction<FileInfoPayload | TransferAcceptPayload>('setup'),
+    [room],
   )
-  const fileAction = room.makeAction<ArrayBuffer>('file')
+  const fileAction = useMemo(() => room.makeAction<ArrayBuffer>('file'), [room])
   const reportProgress = useMemo(
     () =>
       throttle((progress: number) => {
@@ -55,15 +68,6 @@ const WebrtcClient: React.FC<{ roomId: string }> = ({ roomId }) => {
   const [isAlone, setIsAlone] = useState(true)
   const [timedOut, setTimedOut] = useState(false)
 
-  // The onPeerJoin setter synchronously replays already connected peers,
-  // so it must not be (re)assigned during render
-  useEffect(() => {
-    room.onPeerJoin = () => setIsAlone(false)
-    return () => {
-      room.onPeerJoin = null
-    }
-  }, [room])
-
   useEffect(() => {
     if (!isAlone) {
       setTimedOut(false)
@@ -73,14 +77,14 @@ const WebrtcClient: React.FC<{ roomId: string }> = ({ roomId }) => {
     return () => clearTimeout(timeout)
   }, [isAlone])
 
-  room.onPeerLeave = (peerId) => {
+  const onPeerLeave = useEffectEvent(({ peerId }: PeerLeaveContext) => {
     setIsAlone(Object.keys(room.getPeers()).length === 0)
     setUploader((uploader) =>
       uploader?.peerId === peerId
         ? { ...uploader, connectionStatus: 'disconnected' }
         : uploader,
     )
-  }
+  })
 
   // The share code doesn't identify the uploader: it is the first peer
   // to send the file metadata, which it only does once it approved us.
@@ -90,54 +94,82 @@ const WebrtcClient: React.FC<{ roomId: string }> = ({ roomId }) => {
   const uploaderPeerId = useRef<string | null>(null)
   const [conflict, setConflict] = useState(false)
 
-  setupAction.onMessage = (data, { peerId }) => {
-    if (data.type !== 'metadata') {
-      return
-    }
-    uploaderPeerId.current ??= peerId
-    if (peerId !== uploaderPeerId.current) {
-      setConflict(true)
-      room.leave().catch(() => {})
-    } else {
-      setFileInfo(data)
-      setUploader({
-        peerId,
-        connectionStatus: 'connected',
-        transferStatus: 'not_started',
-        progress: 0,
-      })
-    }
-  }
-
-  fileAction.onMessage = (payload, { peerId }) => {
-    if (
-      peerId === uploader?.peerId &&
-      fileInfo &&
-      payload &&
-      uploader?.transferStatus === 'in_progress'
-    ) {
-      receivedSlices.current.push(payload)
-      receivedBytes.current += payload.byteLength
-      if (receivedBytes.current >= fileInfo.filesize) {
-        setBlob(new Blob(receivedSlices.current, { type: fileInfo.filetype }))
-        receivedSlices.current = []
-        setUploader({ ...uploader, transferStatus: 'completed', progress: 100 })
+  const onSetupMessage = useEffectEvent(
+    (
+      data: FileInfoPayload | TransferAcceptPayload,
+      { peerId }: MessageContext,
+    ) => {
+      if (data.type !== 'metadata') {
+        return
       }
-    }
-  }
+      uploaderPeerId.current ??= peerId
+      if (peerId !== uploaderPeerId.current) {
+        setConflict(true)
+        room.leave().catch(() => {})
+      } else {
+        setFileInfo(data)
+        setUploader({
+          peerId,
+          connectionStatus: 'connected',
+          transferStatus: 'not_started',
+          progress: 0,
+        })
+      }
+    },
+  )
 
-  fileAction.onReceiveProgress = (percent, { peerId }) => {
-    if (peerId === uploader?.peerId && fileInfo?.filesize) {
-      const sliceSize = Math.min(
-        FILE_SLICE_SIZE,
-        fileInfo.filesize - receivedBytes.current,
-      )
-      reportProgress(
-        ((receivedBytes.current + percent * sliceSize) / fileInfo.filesize) *
-          100,
-      )
-    }
-  }
+  const onFileMessage = useEffectEvent(
+    (payload: ArrayBuffer, { peerId }: MessageContext) => {
+      if (
+        peerId === uploader?.peerId &&
+        fileInfo &&
+        payload &&
+        uploader?.transferStatus === 'in_progress'
+      ) {
+        receivedSlices.current.push(payload)
+        receivedBytes.current += payload.byteLength
+        if (receivedBytes.current >= fileInfo.filesize) {
+          setBlob(new Blob(receivedSlices.current, { type: fileInfo.filetype }))
+          receivedSlices.current = []
+          setUploader({
+            ...uploader,
+            transferStatus: 'completed',
+            progress: 100,
+          })
+        }
+      }
+    },
+  )
+
+  const onFileProgress = useEffectEvent(
+    (percent: number, { peerId }: ActionProgressContext) => {
+      if (peerId === uploader?.peerId && fileInfo?.filesize) {
+        const sliceSize = Math.min(
+          FILE_SLICE_SIZE,
+          fileInfo.filesize - receivedBytes.current,
+        )
+        reportProgress(
+          ((receivedBytes.current + percent * sliceSize) / fileInfo.filesize) *
+            100,
+        )
+      }
+    },
+  )
+
+  // Listeners are registered once per room, the effect events giving them
+  // access to the latest state
+  useEffect(() => {
+    const unsubscribes = [
+      room.onPeerJoin(() => setIsAlone(false), { replay: true }),
+      room.onPeerLeave((context) => onPeerLeave(context)),
+      setupAction.onMessage((data, context) => onSetupMessage(data, context)),
+      fileAction.onMessage((data, context) => onFileMessage(data, context)),
+      fileAction.onReceiveProgress((percent, context) =>
+        onFileProgress(percent, context),
+      ),
+    ]
+    return () => unsubscribes.forEach((unsubscribe) => unsubscribe())
+  }, [room, setupAction, fileAction])
 
   if (conflict) {
     return <Conflict />
