@@ -27,6 +27,8 @@ const relayUrls = (import.meta.env.VITE_RELAY_URLS ?? '')
 
 export const trysteroConfig = {
   appId: 'ezshare',
+  // Peers get throwaway identities, so that they can't be recognized from one share to the next
+  identity: 'none' as const,
   ...(relayUrls.length ? { relayConfig: { urls: relayUrls } } : {}),
 }
 
